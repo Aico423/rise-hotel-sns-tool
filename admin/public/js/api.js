@@ -1,9 +1,20 @@
 // 画面の裏側で使う通信ヘルパー。専門用語はここに閉じ込め、画面には出さない。
+//
+// 【重要】Vercel上のPython実行環境の制約により、実際のURLパス(/api/materials等)は
+// 使わず、単一のエンドポイント /api/index に resource/id をクエリパラメータとして
+// 付けて呼び出す方式にしている（admin/api/index.py 側の実装と対応関係にある）。
 const Api = (() => {
-  async function request(path, options = {}) {
+  const ENDPOINT = "/api/index";
+
+  function withQuery(params) {
+    const query = new URLSearchParams(params).toString();
+    return `${ENDPOINT}?${query}`;
+  }
+
+  async function request(url, options = {}) {
     let res;
     try {
-      res = await fetch(path, {
+      res = await fetch(url, {
         headers: { "Content-Type": "application/json", ...(options.headers || {}) },
         ...options,
       });
@@ -26,17 +37,20 @@ const Api = (() => {
   }
 
   return {
-    getConfig: () => request("/api/config"),
-    listMaterials: () => request("/api/materials"),
-    createMaterial: (payload) => request("/api/materials", { method: "POST", body: JSON.stringify(payload) }),
-    updateMaterial: (id, payload) =>
-      request(`/api/materials/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(payload) }),
-    deleteMaterial: (id) => request(`/api/materials/${encodeURIComponent(id)}`, { method: "DELETE" }),
+    getConfig: () => request(withQuery({ resource: "config" })),
 
-    listTexts: () => request("/api/texts"),
-    createText: (payload) => request("/api/texts", { method: "POST", body: JSON.stringify(payload) }),
+    listMaterials: () => request(withQuery({ resource: "materials" })),
+    createMaterial: (payload) =>
+      request(withQuery({ resource: "materials" }), { method: "POST", body: JSON.stringify(payload) }),
+    updateMaterial: (id, payload) =>
+      request(withQuery({ resource: "materials", id }), { method: "PUT", body: JSON.stringify(payload) }),
+    deleteMaterial: (id) => request(withQuery({ resource: "materials", id }), { method: "DELETE" }),
+
+    listTexts: () => request(withQuery({ resource: "texts" })),
+    createText: (payload) =>
+      request(withQuery({ resource: "texts" }), { method: "POST", body: JSON.stringify(payload) }),
     updateText: (id, payload) =>
-      request(`/api/texts/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(payload) }),
-    deleteText: (id) => request(`/api/texts/${encodeURIComponent(id)}`, { method: "DELETE" }),
+      request(withQuery({ resource: "texts", id }), { method: "PUT", body: JSON.stringify(payload) }),
+    deleteText: (id) => request(withQuery({ resource: "texts", id }), { method: "DELETE" }),
   };
 })();

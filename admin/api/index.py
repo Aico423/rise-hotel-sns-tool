@@ -4,6 +4,12 @@
 GitHub Contents API経由で直接読み書きする（データベースは使わない）。
 画面側にはAPI・JSON・パラメータ等の専門用語を一切出さない前提のため、
 このファイルのエラーメッセージもすべて平易な日本語にしてある。
+
+【重要】VercelのPython実行環境では、vercel.jsonのrewriteを使っても
+Flaskが受け取るリクエストパスは実際のURL（例: /api/materials）ではなく、
+常にrewrite先のパス（/api/index）になってしまう（実機で確認済み）。
+そのため、パスではなくクエリパラメータ（resource, id）でどの処理を行うか
+振り分ける方式にしている。
 """
 from __future__ import annotations
 
@@ -69,23 +75,11 @@ def _handle_github_error(exc: GithubClientError):
     return _error(str(exc) or "保存に失敗しました。もう一度お試しください。", 502)
 
 
-@app.route("/", defaults={"_catchall": ""})
-@app.route("/<path:_catchall>")
-def debug_path(_catchall):
-    return jsonify(
-        {
-            "path": request.path,
-            "full_path": request.full_path,
-            "script_root": request.script_root,
-            "base_url": request.base_url,
-            "environ_PATH_INFO": request.environ.get("PATH_INFO"),
-            "environ_SCRIPT_NAME": request.environ.get("SCRIPT_NAME"),
-        }
-    )
+# ---------------------------------------------------------------------------
+# 設定（タグの選択肢）
+# ---------------------------------------------------------------------------
 
-
-@app.route("/api/config", methods=["GET"])
-def get_config():
+def _get_config():
     return jsonify(github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG))
 
 
@@ -99,16 +93,14 @@ def _material_with_url(material: dict) -> dict:
     return enriched
 
 
-@app.route("/api/materials", methods=["GET"])
-def list_materials():
+def _list_materials():
     data = github_client.get_json(MATERIALS_PATH, {"materials": []})
     materials = [_material_with_url(m) for m in data.get("materials", [])]
     materials.sort(key=lambda m: m.get("created_at", ""), reverse=True)
     return jsonify({"materials": materials})
 
 
-@app.route("/api/materials", methods=["POST"])
-def create_material():
+def _create_material():
     body = request.get_json(silent=True) or {}
     image_base64 = body.get("image_base64")
     if not image_base64:
@@ -150,8 +142,7 @@ def create_material():
     return jsonify(_material_with_url(record)), 201
 
 
-@app.route("/api/materials/<material_id>", methods=["PUT"])
-def update_material(material_id: str):
+def _update_material(material_id: str):
     body = request.get_json(silent=True) or {}
 
     def _mutate(data):
@@ -181,8 +172,7 @@ def update_material(material_id: str):
     return jsonify(_material_with_url(updated))
 
 
-@app.route("/api/materials/<material_id>", methods=["DELETE"])
-def delete_material(material_id: str):
+def _delete_material(material_id: str):
     holder: dict = {}
 
     def _mutate(data):
@@ -208,16 +198,14 @@ def delete_material(material_id: str):
 # 投稿文言・キーワード
 # ---------------------------------------------------------------------------
 
-@app.route("/api/texts", methods=["GET"])
-def list_texts():
+def _list_texts():
     data = github_client.get_json(TEXTS_PATH, {"texts": []})
     texts = data.get("texts", [])
     texts.sort(key=lambda t: t.get("created_at", ""), reverse=True)
     return jsonify({"texts": texts})
 
 
-@app.route("/api/texts", methods=["POST"])
-def create_text():
+def _create_text():
     body = request.get_json(silent=True) or {}
     text_value = (body.get("text") or "").strip()
     if not text_value:
@@ -248,8 +236,7 @@ def create_text():
     return jsonify(record), 201
 
 
-@app.route("/api/texts/<text_id>", methods=["PUT"])
-def update_text(text_id: str):
+def _update_text(text_id: str):
     body = request.get_json(silent=True) or {}
 
     def _mutate(data):
@@ -285,8 +272,7 @@ def update_text(text_id: str):
     return jsonify(updated)
 
 
-@app.route("/api/texts/<text_id>", methods=["DELETE"])
-def delete_text(text_id: str):
+def _delete_text(text_id: str):
     def _mutate(data):
         texts = data.setdefault("texts", [])
         data["texts"] = [t for t in texts if t.get("id") != text_id]
@@ -296,3 +282,39 @@ def delete_text(text_id: str):
         TEXTS_PATH, _mutate, message=f"delete text {text_id}", default={"texts": []}
     )
     return jsonify({"texts": new_data["texts"]})
+
+
+# ---------------------------------------------------------------------------
+# ルーティング（唯一のエンドポイント。resource/idクエリパラメータで振り分ける）
+# ---------------------------------------------------------------------------
+
+@app.route("/api/index", methods=["GET", "POST", "PUT", "DELETE"])
+def api_entry():
+    resource = request.args.get("resource")
+    item_id = request.args.get("id")
+    method = request.method
+
+    if resource == "config" and method == "GET":
+        return _get_config()
+
+    if resource == "materials":
+        if method == "GET":
+            return _list_materials()
+        if method == "POST":
+            return _create_material()
+        if method == "PUT" and item_id:
+            return _update_material(item_id)
+        if method == "DELETE" and item_id:
+            return _delete_material(item_id)
+
+    if resource == "texts":
+        if method == "GET":
+            return _list_texts()
+        if method == "POST":
+            return _create_text()
+        if method == "PUT" and item_id:
+            return _update_text(item_id)
+        if method == "DELETE" and item_id:
+            return _delete_text(item_id)
+
+    return _error("不明なリクエストです。", 404)
