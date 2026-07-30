@@ -6,8 +6,9 @@
   const pickFileBtn = document.getElementById("pick-file-btn");
   const preview = document.getElementById("preview");
   const roomTypeSelect = document.getElementById("room-type");
+  const roomTypeDetail = document.getElementById("room-type-detail");
+  const roomNumberInput = document.getElementById("room-number");
   const seasonsContainer = document.getElementById("seasons-checkboxes");
-  const featuresContainer = document.getElementById("features-checkboxes");
   const readyMadeCheckbox = document.getElementById("ready-made-checkbox");
   const form = document.getElementById("material-form");
   const submitBtn = document.getElementById("submit-btn");
@@ -60,9 +61,8 @@
 
   try {
     const config = await Api.getConfig();
-    roomTypeSelect.innerHTML = config.room_types.map((rt) => `<option value="${rt}">${rt}</option>`).join("");
+    renderRoomTypeSelect(roomTypeSelect, roomTypeDetail, config.room_types);
     renderCheckboxGroup(seasonsContainer, "season", config.seasons);
-    renderCheckboxGroup(featuresContainer, "feature", config.features);
   } catch (e) {
     showMessage(e.message, "error");
   }
@@ -83,8 +83,8 @@
       await Api.createMaterial({
         image_base64: compressedDataUrl,
         room_type: roomTypeSelect.value,
+        room_number: roomNumberInput.value,
         seasons: getCheckedValues(seasonsContainer),
-        features: getCheckedValues(featuresContainer),
         ready_made: readyMadeCheckbox.checked,
       });
       showMessage("写真を登録しました。一覧画面に戻ります…", "success");

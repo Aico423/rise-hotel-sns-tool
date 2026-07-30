@@ -33,6 +33,7 @@ from rise_sns import (  # noqa: E402
     notifier,
     platform_formats,
     selector,
+    text_template,
 )
 from rise_sns.publishers.base import BasePublisher  # noqa: E402
 from rise_sns.publishers.facebook_publisher import FacebookPublisher  # noqa: E402
@@ -107,6 +108,9 @@ def run() -> int:
         logger.info("選ばれた文言に投稿先が設定されていないため、本日は投稿を行いません。")
         return 0
 
+    room_type_defs = text_template.room_types_by_name(data_store.load_config())
+    rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+
     room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
 
     if material.get("ready_made"):
@@ -116,13 +120,13 @@ def run() -> int:
         generated = room_photo
     else:
         try:
-            generated = image_generator.generate_composite_image(room_photo, text["text"])
+            generated = image_generator.generate_composite_image(room_photo, rendered_text)
         except image_generator.ImageGenerationError as exc:
             logger.error(str(exc))
             notifier.notify_failure(f"画像生成に失敗したため本日の投稿をスキップしました: {exc}")
             return 1
 
-    captioned = caption_overlay.add_caption(generated, text["text"])
+    captioned = caption_overlay.add_caption(generated, rendered_text)
 
     creative_tags = selector.compute_creative_tags(material, text)
     matched_decorations = decorations.select_decorations(data_store.load_decorations(), creative_tags)
@@ -177,7 +181,7 @@ def run() -> int:
 
         publisher = publisher_cls(dry_run=not enabled)
         result = publisher.publish(
-            caption=text["text"],
+            caption=rendered_text,
             image_path=local_path if platform not in NEEDS_PUBLIC_URL else None,
             image_url=image_url,
         )

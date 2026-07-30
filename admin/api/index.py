@@ -39,9 +39,15 @@ CONFIG_PATH = "data/config.json"
 DECORATIONS_PATH = "data/decorations.json"
 
 DEFAULT_CONFIG = {
-    "room_types": ["シングル", "ダブル", "ツイン", "スイート"],
+    "room_types": [
+        {"name": "Type A", "bed_size": "上段Wide-Double 155cm×200cm / 下段Semi-Double 140cm×200cm", "max_guests": 10},
+        {"name": "Type B", "bed_size": "上段Wide-Double 155cm×200cm / 下段King 185cm×200cm", "max_guests": 8},
+        {"name": "Type C", "bed_size": "上段Wide-Double 155cm×200cm / 下段Wide-Double 155cm×200cm", "max_guests": 8},
+        {"name": "スイートルーム", "bed_size": "Queen 180cm×200cm×8台", "max_guests": 16},
+        {"name": "ツインベッドルーム", "bed_size": "Queen 180cm×200cm×2台", "max_guests": 4},
+        {"name": "ダブルベッドルーム", "bed_size": "Double 140cm×200cm×2台", "max_guests": 3},
+    ],
     "seasons": ["春", "夏", "秋", "冬", "通年"],
-    "features": ["夜景あり", "和室", "広め", "その他"],
     "text_categories": ["通常訴求", "季節限定", "イベント"],
     "platforms": ["x", "instagram", "facebook", "google"],
     "decoration_placements": [
@@ -150,8 +156,8 @@ def _create_material():
         "id": material_id,
         "image_path": image_path,
         "room_type": body.get("room_type") or "",
+        "room_number": (body.get("room_number") or "").strip(),
         "seasons": body.get("seasons") or [],
-        "features": body.get("features") or [],
         "ready_made": bool(body.get("ready_made")),
         "active": True,
         "created_at": _now(),
@@ -178,10 +184,10 @@ def _update_material(material_id: str):
             if m.get("id") == material_id:
                 if "room_type" in body:
                     m["room_type"] = body["room_type"]
+                if "room_number" in body:
+                    m["room_number"] = (body["room_number"] or "").strip()
                 if "seasons" in body:
                     m["seasons"] = body["seasons"]
-                if "features" in body:
-                    m["features"] = body["features"]
                 if "ready_made" in body:
                     m["ready_made"] = bool(body["ready_made"])
                 if "active" in body:

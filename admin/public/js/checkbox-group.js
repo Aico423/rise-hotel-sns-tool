@@ -1,3 +1,39 @@
+// 「部屋タイプを挿入」等のボタンを押したときに、textareaのカーソル位置に
+// {room_type} のようなプレースホルダーを挿入する（専門用語を見せずに差し込みができるようにする）。
+function wirePlaceholderButtons(container, textarea) {
+  container.querySelectorAll("button[data-placeholder]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const token = `{${button.dataset.placeholder}}`;
+      const start = textarea.selectionStart ?? textarea.value.length;
+      const end = textarea.selectionEnd ?? textarea.value.length;
+      textarea.value = textarea.value.slice(0, start) + token + textarea.value.slice(end);
+      const cursor = start + token.length;
+      textarea.focus();
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  });
+}
+
+// 部屋タイプの選択肢(<select>)を描画し、選んだ内容(ベッドサイズ・最大宿泊人数)を
+// hintEl に表示する。roomTypes は [{name, bed_size, max_guests}, ...] の形。
+function renderRoomTypeSelect(selectEl, hintEl, roomTypes, selectedName) {
+  selectEl.innerHTML = roomTypes
+    .map((rt) => `<option value="${rt.name}" ${rt.name === selectedName ? "selected" : ""}>${rt.name}</option>`)
+    .join("");
+
+  function updateHint() {
+    const current = roomTypes.find((rt) => rt.name === selectEl.value);
+    if (!current) {
+      hintEl.textContent = "";
+      return;
+    }
+    hintEl.textContent = `ベッド: ${current.bed_size || "-"} ／ 最大宿泊人数: ${current.max_guests || "-"}名様`;
+  }
+
+  selectEl.addEventListener("change", updateHint);
+  updateHint();
+}
+
 // 投稿先コード -> 画面表示名（専門用語を出さないため、ここで日本語に変換する）。
 const PLATFORM_LABELS = {
   x: "X",

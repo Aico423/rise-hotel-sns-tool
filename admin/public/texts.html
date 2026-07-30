@@ -27,6 +27,16 @@
         <div class="field">
           <label class="field-label" for="text-body">投稿に使いたい文言・キーワード</label>
           <textarea id="text-body" placeholder="例：夜景が自慢のお部屋で、特別な夜をお過ごしください"></textarea>
+          <p class="hint-text">
+            下のボタンを押すと、カーソルの位置に「部屋の情報」を挿入できます。実際に投稿されるときに、
+            その日選ばれた写真の情報へ自動で置き換わります。
+          </p>
+          <div class="button-row insert-placeholder-row">
+            <button type="button" class="secondary" data-placeholder="room_type">部屋タイプを挿入</button>
+            <button type="button" class="secondary" data-placeholder="room_number">部屋番号を挿入</button>
+            <button type="button" class="secondary" data-placeholder="bed_size">ベッドサイズを挿入</button>
+            <button type="button" class="secondary" data-placeholder="max_guests">最大宿泊人数を挿入</button>
+          </div>
         </div>
 
         <div class="field">

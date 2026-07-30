@@ -62,8 +62,8 @@
         <div class="body">
           <div class="tag-list">
             ${material.room_type ? `<span class="tag">${escapeHtml(material.room_type)}</span>` : ""}
+            ${material.room_number ? `<span class="tag">${escapeHtml(material.room_number)}号室</span>` : ""}
             ${tagBadges(material.seasons)}
-            ${tagBadges(material.features)}
             ${material.ready_made ? '<span class="tag">完成写真</span>' : ""}
           </div>
           <div class="card-actions">
@@ -113,14 +113,15 @@
       <div class="field">
         <label class="field-label">部屋タイプ</label>
         <select class="edit-room-type"></select>
+        <p class="edit-room-type-detail hint-text"></p>
+      </div>
+      <div class="field">
+        <label class="field-label">部屋番号（任意）</label>
+        <input type="text" class="edit-room-number" placeholder="例：601" />
       </div>
       <div class="field">
         <label class="field-label">季節</label>
         <div class="checkbox-grid edit-seasons"></div>
-      </div>
-      <div class="field">
-        <label class="field-label">特徴</label>
-        <div class="checkbox-grid edit-features"></div>
       </div>
       <div class="field">
         <label class="checkbox-pill">
@@ -141,14 +142,13 @@
     });
 
     const roomTypeSelect = panel.querySelector(".edit-room-type");
-    roomTypeSelect.innerHTML = config.room_types
-      .map((rt) => `<option value="${rt}" ${rt === material.room_type ? "selected" : ""}>${rt}</option>`)
-      .join("");
+    const roomTypeDetail = panel.querySelector(".edit-room-type-detail");
+    renderRoomTypeSelect(roomTypeSelect, roomTypeDetail, config.room_types, material.room_type);
+
+    panel.querySelector(".edit-room-number").value = material.room_number || "";
 
     const seasonsContainer = panel.querySelector(".edit-seasons");
-    const featuresContainer = panel.querySelector(".edit-features");
     renderCheckboxGroup(seasonsContainer, `edit-season-${material.id}`, config.seasons, material.seasons || []);
-    renderCheckboxGroup(featuresContainer, `edit-feature-${material.id}`, config.features, material.features || []);
 
     panel.querySelector(".save-btn").addEventListener("click", async () => {
       const btn = panel.querySelector(".save-btn");
@@ -157,8 +157,8 @@
       try {
         await Api.updateMaterial(material.id, {
           room_type: roomTypeSelect.value,
+          room_number: panel.querySelector(".edit-room-number").value,
           seasons: getCheckedValues(seasonsContainer),
-          features: getCheckedValues(featuresContainer),
           ready_made: readyMadeCheckbox.checked,
         });
         showMessage("写真の内容を更新しました。", "success");
@@ -255,6 +255,12 @@
       <div class="field">
         <label class="field-label">文言</label>
         <textarea class="edit-text-body"></textarea>
+        <div class="button-row edit-insert-placeholder-row">
+          <button type="button" class="secondary" data-placeholder="room_type">部屋タイプを挿入</button>
+          <button type="button" class="secondary" data-placeholder="room_number">部屋番号を挿入</button>
+          <button type="button" class="secondary" data-placeholder="bed_size">ベッドサイズを挿入</button>
+          <button type="button" class="secondary" data-placeholder="max_guests">最大宿泊人数を挿入</button>
+        </div>
       </div>
       <div class="field">
         <label class="field-label">カテゴリ</label>
@@ -279,6 +285,7 @@
 
     panel.querySelector(".edit-text-body").value = text.text;
     panel.querySelector(".edit-tags").value = (text.tags || []).join(", ");
+    wirePlaceholderButtons(panel.querySelector(".edit-insert-placeholder-row"), panel.querySelector(".edit-text-body"));
 
     const categorySelect = panel.querySelector(".edit-category");
     categorySelect.innerHTML = config.text_categories

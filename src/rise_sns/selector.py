@@ -110,7 +110,6 @@ def compute_creative_tags(material: dict, text: dict) -> set[str]:
     if material.get("room_type"):
         tags.add(material["room_type"])
     tags.update(material.get("seasons", []))
-    tags.update(material.get("features", []))
     if text.get("category"):
         tags.add(text["category"])
     tags.update(text.get("tags", []))

@@ -9,6 +9,8 @@
   const form = document.getElementById("text-form");
   const submitBtn = document.getElementById("submit-btn");
 
+  wirePlaceholderButtons(document.querySelector(".insert-placeholder-row"), textBody);
+
   function showMessage(text, type) {
     messageEl.textContent = text;
     messageEl.className = `message ${type}`;

@@ -70,14 +70,13 @@ def test_select_text_ignores_inactive():
 
 def test_compute_creative_tags_combines_material_and_text_tags():
     material = make_material("a", ["夏", "通年"])
-    material["room_type"] = "スイート"
-    material["features"] = ["夜景あり"]
+    material["room_type"] = "スイートルーム"
     text = make_text("t1")
     text["category"] = "季節限定"
     text["tags"] = ["東京", "新宿"]
 
     tags = selector.compute_creative_tags(material, text)
-    assert tags == {"スイート", "夏", "通年", "夜景あり", "季節限定", "東京", "新宿"}
+    assert tags == {"スイートルーム", "夏", "通年", "季節限定", "東京", "新宿"}
 
 
 def test_compute_creative_tags_handles_missing_optional_fields():
