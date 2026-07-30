@@ -3,7 +3,7 @@
     {
       "id": "9b76909e0511",
       "image_path": "images/9b76909e0511.jpg",
-      "room_type": "シングル",
+      "room_type": "Type B",
       "seasons": [
         "通年"
       ],
@@ -13,7 +13,8 @@
       "ready_made": true,
       "active": true,
       "created_at": "2026-07-30T10:28:24.898300+00:00",
-      "updated_at": "2026-07-30T10:28:24.898341+00:00"
+      "updated_at": "2026-07-30T11:15:19.597468+00:00",
+      "room_number": ""
     },
     {
       "id": "7c99df2a96c7",
