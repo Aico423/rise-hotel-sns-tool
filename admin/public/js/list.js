@@ -3,6 +3,7 @@
   const messageEl = document.getElementById("message");
   const materialsListEl = document.getElementById("materials-list");
   const textsListEl = document.getElementById("texts-list");
+  const decorationsListEl = document.getElementById("decorations-list");
 
   let config = null;
 
@@ -184,6 +185,7 @@
         <div class="meta">
           <div class="tag-list">
             ${text.category ? `<span class="tag">${escapeHtml(text.category)}</span>` : ""}
+            ${tagBadges(text.tags)}
             ${platformBadges(text.platforms)}
           </div>
           <div class="card-actions">
@@ -239,6 +241,10 @@
         <select class="edit-category"></select>
       </div>
       <div class="field">
+        <label class="field-label">関連キーワード（任意）</label>
+        <input type="text" class="edit-tags" placeholder="例：東京, 新宿, 予約訴求" />
+      </div>
+      <div class="field">
         <label class="field-label">どのSNSに使いますか？</label>
         <div class="checkbox-grid edit-platforms"></div>
       </div>
@@ -248,6 +254,7 @@
     `;
 
     panel.querySelector(".edit-text-body").value = text.text;
+    panel.querySelector(".edit-tags").value = (text.tags || []).join(", ");
 
     const categorySelect = panel.querySelector(".edit-category");
     categorySelect.innerHTML = config.text_categories
@@ -280,13 +287,139 @@
       }
       const platforms = {};
       selected.forEach((p) => (platforms[p] = true));
+      const tagsValue = panel.querySelector(".edit-tags").value;
 
       btn.disabled = true;
       btn.textContent = "保存しています…";
       try {
-        await Api.updateText(text.id, { text: newText, category: categorySelect.value, platforms });
+        await Api.updateText(text.id, { text: newText, category: categorySelect.value, tags: tagsValue, platforms });
         showMessage("文言を更新しました。", "success");
         await loadTexts();
+      } catch (e) {
+        showMessage(e.message, "error");
+        btn.disabled = false;
+        btn.textContent = "保存する";
+      }
+    });
+  }
+
+  // ---------------- スタンプ・ハッシュタグ画像 ----------------
+
+  async function loadDecorations() {
+    decorationsListEl.innerHTML = '<div class="loading">読み込み中です…</div>';
+    try {
+      const { decorations } = await Api.listDecorations();
+      renderDecorations(decorations);
+    } catch (e) {
+      decorationsListEl.innerHTML = "";
+      showMessage(e.message, "error");
+    }
+  }
+
+  function renderDecorations(items) {
+    if (items.length === 0) {
+      decorationsListEl.innerHTML =
+        '<p class="empty-state">まだスタンプが登録されていません。「スタンプを登録する」から追加できます。</p>';
+      return;
+    }
+    decorationsListEl.innerHTML = '<div class="grid" id="decorations-grid"></div>';
+    const grid = document.getElementById("decorations-grid");
+
+    items.forEach((decoration) => {
+      const card = document.createElement("div");
+      card.className = "material-card decoration-card";
+      card.innerHTML = `
+        <img class="thumb-transparent" src="${decoration.image_url}" alt="${escapeHtml(decoration.name || "スタンプ")}" loading="lazy" />
+        <div class="body">
+          <strong>${escapeHtml(decoration.name || "（名前未設定）")}</strong>
+          <div class="tag-list">
+            <span class="tag">${escapeHtml(PLACEMENT_LABELS[decoration.placement] || decoration.placement)}</span>
+            ${tagBadges(decoration.tags)}
+          </div>
+          <div class="card-actions">
+            <button type="button" class="secondary edit-btn">編集する</button>
+            <button type="button" class="danger delete-btn">削除する</button>
+          </div>
+          <div class="edit-panel" style="display:none"></div>
+        </div>
+      `;
+
+      const editBtn = card.querySelector(".edit-btn");
+      const deleteBtn = card.querySelector(".delete-btn");
+      const editPanel = card.querySelector(".edit-panel");
+
+      editBtn.addEventListener("click", () => {
+        const isOpen = editPanel.style.display !== "none";
+        if (isOpen) {
+          editPanel.style.display = "none";
+          editPanel.innerHTML = "";
+          editBtn.textContent = "編集する";
+          return;
+        }
+        openDecorationEditor(editPanel, decoration);
+        editPanel.style.display = "block";
+        editBtn.textContent = "編集をとじる";
+      });
+
+      deleteBtn.addEventListener("click", async () => {
+        if (!window.confirm("このスタンプを削除します。よろしいですか？（元に戻せません）")) return;
+        deleteBtn.disabled = true;
+        try {
+          await Api.deleteDecoration(decoration.id);
+          showMessage("スタンプを削除しました。", "success");
+          await loadDecorations();
+        } catch (e) {
+          showMessage(e.message, "error");
+          deleteBtn.disabled = false;
+        }
+      });
+
+      grid.appendChild(card);
+    });
+  }
+
+  function openDecorationEditor(panel, decoration) {
+    const placements = config.decoration_placements || Object.keys(PLACEMENT_LABELS);
+    panel.innerHTML = `
+      <div class="field">
+        <label class="field-label">名前</label>
+        <input type="text" class="edit-name" />
+      </div>
+      <div class="field">
+        <label class="field-label">関連するキーワード（カンマ区切り）</label>
+        <input type="text" class="edit-tags" />
+      </div>
+      <div class="field">
+        <label class="field-label">表示位置</label>
+        <select class="edit-placement"></select>
+      </div>
+      <div class="button-row">
+        <button type="button" class="save-btn">保存する</button>
+      </div>
+    `;
+
+    panel.querySelector(".edit-name").value = decoration.name || "";
+    panel.querySelector(".edit-tags").value = (decoration.tags || []).join(", ");
+
+    const placementSelect = panel.querySelector(".edit-placement");
+    placementSelect.innerHTML = placements
+      .map(
+        (p) => `<option value="${p}" ${p === decoration.placement ? "selected" : ""}>${PLACEMENT_LABELS[p] || p}</option>`
+      )
+      .join("");
+
+    panel.querySelector(".save-btn").addEventListener("click", async () => {
+      const btn = panel.querySelector(".save-btn");
+      btn.disabled = true;
+      btn.textContent = "保存しています…";
+      try {
+        await Api.updateDecoration(decoration.id, {
+          name: panel.querySelector(".edit-name").value,
+          tags: panel.querySelector(".edit-tags").value,
+          placement: placementSelect.value,
+        });
+        showMessage("スタンプの内容を更新しました。", "success");
+        await loadDecorations();
       } catch (e) {
         showMessage(e.message, "error");
         btn.disabled = false;
@@ -304,5 +437,5 @@
     return;
   }
 
-  await Promise.all([loadMaterials(), loadTexts()]);
+  await Promise.all([loadMaterials(), loadTexts(), loadDecorations()]);
 })();

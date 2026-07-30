@@ -36,6 +36,7 @@ app.json.ensure_ascii = False
 MATERIALS_PATH = "data/materials.json"
 TEXTS_PATH = "data/texts.json"
 CONFIG_PATH = "data/config.json"
+DECORATIONS_PATH = "data/decorations.json"
 
 DEFAULT_CONFIG = {
     "room_types": ["シングル", "ダブル", "ツイン", "スイート"],
@@ -43,7 +44,26 @@ DEFAULT_CONFIG = {
     "features": ["夜景あり", "和室", "広め", "その他"],
     "text_categories": ["通常訴求", "季節限定", "イベント"],
     "platforms": ["x", "instagram", "facebook", "google"],
+    "decoration_placements": [
+        "top_left",
+        "top_right",
+        "top_center",
+        "bottom_left",
+        "bottom_right",
+        "bottom_center",
+    ],
 }
+
+
+def _parse_tags(raw) -> list[str]:
+    """カンマ区切りの文字列、または配列の両方を受け付けて、空白除去済みのリストにする。"""
+    if isinstance(raw, list):
+        items = raw
+    elif isinstance(raw, str):
+        items = raw.split(",")
+    else:
+        items = []
+    return [item.strip() for item in items if item and item.strip()]
 
 _DATA_URL_RE = re.compile(r"^data:(?P<mime>[\w/+.-]+);base64,(?P<data>.*)$", re.DOTALL)
 _MIME_TO_EXT = {"image/jpeg": "jpg", "image/jpg": "jpg", "image/png": "png", "image/webp": "webp"}
@@ -216,6 +236,7 @@ def _create_text():
         "id": text_id,
         "text": text_value,
         "category": body.get("category") or "",
+        "tags": _parse_tags(body.get("tags")),
         "platforms": {
             "x": bool((body.get("platforms") or {}).get("x")),
             "instagram": bool((body.get("platforms") or {}).get("instagram")),
@@ -247,6 +268,8 @@ def _update_text(text_id: str):
                     t["text"] = (body["text"] or "").strip()
                 if "category" in body:
                     t["category"] = body["category"]
+                if "tags" in body:
+                    t["tags"] = _parse_tags(body["tags"])
                 if "platforms" in body:
                     platforms = body["platforms"] or {}
                     t["platforms"] = {
@@ -285,6 +308,123 @@ def _delete_text(text_id: str):
 
 
 # ---------------------------------------------------------------------------
+# スタンプ・ハッシュタグ画像
+# ---------------------------------------------------------------------------
+
+def _decoration_with_url(decoration: dict) -> dict:
+    enriched = dict(decoration)
+    enriched["image_url"] = github_client.public_raw_url(f"data/{decoration['image_path']}")
+    return enriched
+
+
+def _list_decorations():
+    data = github_client.get_json(DECORATIONS_PATH, {"decorations": []})
+    items = [_decoration_with_url(d) for d in data.get("decorations", [])]
+    items.sort(key=lambda d: d.get("created_at", ""), reverse=True)
+    return jsonify({"decorations": items})
+
+
+def _create_decoration():
+    body = request.get_json(silent=True) or {}
+    image_base64 = body.get("image_base64")
+    if not image_base64:
+        return _error("画像が選択されていません。")
+
+    placement = body.get("placement")
+    if placement not in DEFAULT_CONFIG["decoration_placements"]:
+        return _error("表示位置を選択してください。")
+
+    try:
+        image_bytes, ext = _decode_image(image_base64)
+    except ValueError as exc:
+        return _error(str(exc))
+
+    decoration_id = uuid.uuid4().hex[:12]
+    image_path = f"decorations/{decoration_id}.{ext}"
+
+    github_client.put_file(
+        f"data/{image_path}",
+        image_bytes,
+        message=f"add decoration image {decoration_id}",
+    )
+
+    record = {
+        "id": decoration_id,
+        "image_path": image_path,
+        "name": (body.get("name") or "").strip(),
+        "tags": _parse_tags(body.get("tags")),
+        "placement": placement,
+        "active": True,
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+
+    def _mutate(data):
+        data.setdefault("decorations", []).append(record)
+        return data
+
+    github_client.update_json_with_retry(
+        DECORATIONS_PATH, _mutate, message=f"add decoration {decoration_id}", default={"decorations": []}
+    )
+
+    return jsonify(_decoration_with_url(record)), 201
+
+
+def _update_decoration(decoration_id: str):
+    body = request.get_json(silent=True) or {}
+
+    def _mutate(data):
+        items = data.setdefault("decorations", [])
+        for d in items:
+            if d.get("id") == decoration_id:
+                if "name" in body:
+                    d["name"] = (body["name"] or "").strip()
+                if "tags" in body:
+                    d["tags"] = _parse_tags(body["tags"])
+                if "placement" in body:
+                    if body["placement"] not in DEFAULT_CONFIG["decoration_placements"]:
+                        raise ValueError("表示位置の指定が正しくありません。")
+                    d["placement"] = body["placement"]
+                if "active" in body:
+                    d["active"] = bool(body["active"])
+                d["updated_at"] = _now()
+                return data
+        raise ValueError("対象のスタンプが見つかりませんでした。")
+
+    try:
+        new_data = github_client.update_json_with_retry(
+            DECORATIONS_PATH, _mutate, message=f"update decoration {decoration_id}", default={"decorations": []}
+        )
+    except ValueError as exc:
+        return _error(str(exc), 404)
+
+    updated = next((d for d in new_data["decorations"] if d["id"] == decoration_id), None)
+    return jsonify(_decoration_with_url(updated))
+
+
+def _delete_decoration(decoration_id: str):
+    holder: dict = {}
+
+    def _mutate(data):
+        items = data.setdefault("decorations", [])
+        remaining = [d for d in items if d.get("id") != decoration_id]
+        removed = [d for d in items if d.get("id") == decoration_id]
+        holder["removed"] = removed[0] if removed else None
+        data["decorations"] = remaining
+        return data
+
+    new_data = github_client.update_json_with_retry(
+        DECORATIONS_PATH, _mutate, message=f"delete decoration {decoration_id}", default={"decorations": []}
+    )
+
+    removed = holder.get("removed")
+    if removed:
+        github_client.delete_file(f"data/{removed['image_path']}", message=f"delete decoration image {decoration_id}")
+
+    return jsonify({"decorations": [_decoration_with_url(d) for d in new_data["decorations"]]})
+
+
+# ---------------------------------------------------------------------------
 # ルーティング（唯一のエンドポイント。resource/idクエリパラメータで振り分ける）
 # ---------------------------------------------------------------------------
 
@@ -316,5 +456,15 @@ def api_entry():
             return _update_text(item_id)
         if method == "DELETE" and item_id:
             return _delete_text(item_id)
+
+    if resource == "decorations":
+        if method == "GET":
+            return _list_decorations()
+        if method == "POST":
+            return _create_decoration()
+        if method == "PUT" and item_id:
+            return _update_decoration(item_id)
+        if method == "DELETE" and item_id:
+            return _delete_decoration(item_id)
 
     return _error("不明なリクエストです。", 404)

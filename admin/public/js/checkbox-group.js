@@ -6,6 +6,16 @@ const PLATFORM_LABELS = {
   google: "Googleビジネスプロフィール",
 };
 
+// スタンプ・ハッシュタグ画像の表示位置コード -> 画面表示名。
+const PLACEMENT_LABELS = {
+  top_left: "左上",
+  top_right: "右上",
+  top_center: "上中央",
+  bottom_left: "左下",
+  bottom_right: "右下",
+  bottom_center: "下中央",
+};
+
 // タグ選択用のチェックボックス群（丸いピル表示）を描画する共通処理。
 function renderCheckboxGroup(container, groupName, options, selectedValues, labels) {
   selectedValues = selectedValues || [];

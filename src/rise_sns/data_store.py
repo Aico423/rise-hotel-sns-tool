@@ -43,6 +43,11 @@ def load_post_history() -> list[dict]:
     return list(data.get("history", []))
 
 
+def load_decorations() -> list[dict]:
+    data = _read_json(config.DECORATIONS_PATH)
+    return list(data.get("decorations", []))
+
+
 def append_post_history(entry: dict) -> None:
     data = _read_json(config.POST_HISTORY_PATH)
     data.setdefault("history", []).append(entry)

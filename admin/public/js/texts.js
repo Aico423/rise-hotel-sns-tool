@@ -3,6 +3,7 @@
   const messageEl = document.getElementById("message");
   const textBody = document.getElementById("text-body");
   const categorySelect = document.getElementById("category");
+  const tagsInput = document.getElementById("tags-input");
   const platformsContainer = document.getElementById("platforms-checkboxes");
   const form = document.getElementById("text-form");
   const submitBtn = document.getElementById("submit-btn");
@@ -50,6 +51,7 @@
       await Api.createText({
         text,
         category: categorySelect.value,
+        tags: tagsInput.value,
         platforms,
       });
       showMessage("文言を登録しました。一覧画面に戻ります…", "success");

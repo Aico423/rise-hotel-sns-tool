@@ -87,6 +87,19 @@ class DailySelection:
     platforms_for_text: list[str]
 
 
+def compute_creative_tags(material: dict, text: dict) -> set[str]:
+    """スタンプ・ハッシュタグ画像の自動選定に使う「その日のクリエイティブのタグ集合」を作る。"""
+    tags: set[str] = set()
+    if material.get("room_type"):
+        tags.add(material["room_type"])
+    tags.update(material.get("seasons", []))
+    tags.update(material.get("features", []))
+    if text.get("category"):
+        tags.add(text["category"])
+    tags.update(text.get("tags", []))
+    return tags
+
+
 def select_daily_pair(
     materials: list[dict],
     texts: list[dict],

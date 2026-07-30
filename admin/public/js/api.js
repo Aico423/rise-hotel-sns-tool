@@ -52,5 +52,12 @@ const Api = (() => {
     updateText: (id, payload) =>
       request(withQuery({ resource: "texts", id }), { method: "PUT", body: JSON.stringify(payload) }),
     deleteText: (id) => request(withQuery({ resource: "texts", id }), { method: "DELETE" }),
+
+    listDecorations: () => request(withQuery({ resource: "decorations" })),
+    createDecoration: (payload) =>
+      request(withQuery({ resource: "decorations" }), { method: "POST", body: JSON.stringify(payload) }),
+    updateDecoration: (id, payload) =>
+      request(withQuery({ resource: "decorations", id }), { method: "PUT", body: JSON.stringify(payload) }),
+    deleteDecoration: (id) => request(withQuery({ resource: "decorations", id }), { method: "DELETE" }),
   };
 })();

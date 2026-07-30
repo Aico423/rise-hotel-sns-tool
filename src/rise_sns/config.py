@@ -19,6 +19,7 @@ CONFIG_PATH = DATA_DIR / "config.json"
 MATERIALS_PATH = DATA_DIR / "materials.json"
 TEXTS_PATH = DATA_DIR / "texts.json"
 POST_HISTORY_PATH = DATA_DIR / "post_history.json"
+DECORATIONS_PATH = DATA_DIR / "decorations.json"
 
 FONTS_DIR = PROJECT_ROOT / "assets" / "fonts"
 CAPTION_FONT_PATH = FONTS_DIR / "NotoSansJP-Bold.ttf"

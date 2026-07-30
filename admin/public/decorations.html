@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>スタンプを登録 | RISE HOTEL SNS投稿ツール</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>スタンプ・ハッシュタグ画像の登録</p>
+  </header>
+  <main>
+    <nav class="tabs">
+      <a href="index.html">一覧にもどる</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+      <a href="decorations.html" class="active">スタンプを登録する</a>
+    </nav>
+
+    <section class="card">
+      <h2>新しいスタンプ・ハッシュタグ画像を登録する</h2>
+      <p class="hint-text">
+        「BOOK NOW」のような予約訴求バッジや、地名・キャンペーンのハッシュタグ風の画像を登録できます。
+        タグが投稿内容と一致したときに、自動で選ばれて写真に重ねて表示されます。
+      </p>
+      <div id="message" class="message hidden"></div>
+
+      <form id="decoration-form">
+        <div class="field">
+          <label class="field-label">画像（背景が透明なPNG画像がおすすめです）</label>
+          <div id="dropzone" class="dropzone dropzone-transparent">
+            <p>ここに画像をドラッグ＆ドロップ<br />または</p>
+            <button type="button" id="pick-file-btn" class="secondary">画像を選ぶ</button>
+            <input type="file" id="file-input" accept="image/*" style="display:none" />
+            <img id="preview" class="preview" style="display:none" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="name-input">名前（自分で分かればOKです）</label>
+          <input type="text" id="name-input" placeholder="例：BOOK NOWスタンプ" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="tags-input">関連するキーワード（カンマ区切りで複数登録できます）</label>
+          <input type="text" id="tags-input" placeholder="例：予約訴求, 東京, 新宿" />
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="placement-select">表示位置</label>
+          <select id="placement-select"></select>
+        </div>
+
+        <div class="button-row">
+          <button type="submit" id="submit-btn">保存する</button>
+          <a href="index.html" class="btn secondary">キャンセル</a>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/image-compress.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/decorations.js"></script>
+</body>
+</html>

@@ -27,6 +27,7 @@ from rise_sns import (  # noqa: E402
     caption_overlay,
     config,
     data_store,
+    decorations,
     image_generator,
     logging_setup,
     notifier,
@@ -117,16 +118,29 @@ def run() -> int:
 
     captioned = caption_overlay.add_caption(generated, text["text"])
 
+    creative_tags = selector.compute_creative_tags(material, text)
+    matched_decorations = decorations.select_decorations(data_store.load_decorations(), creative_tags)
+    if matched_decorations:
+        logger.info(
+            "合成するスタンプ・ハッシュタグ画像: %s",
+            [d.get("name", d["id"]) for d in matched_decorations],
+        )
+
+    def _open_stamp(decoration: dict) -> Image.Image:
+        return Image.open(data_store.resolve_image_path(decoration["image_path"]))
+
     published_dir = config.DATA_DIR / PUBLISHED_DIR_NAME / today.isoformat()
     published_dir.mkdir(parents=True, exist_ok=True)
 
-    # フェーズ1: 各SNS向けにサイズ変換した画像をローカルに書き出す
+    # フェーズ1: 各SNS向けにサイズ変換し、スタンプ・ハッシュタグ画像を合成してローカルに書き出す
     local_paths: dict[str, Path] = {}
     for platform in selection.platforms_for_text:
         if platform not in PUBLISHERS:
             logger.warning("未知の投稿先が指定されています: %s", platform)
             continue
         rendered = platform_formats.render_for_platform(captioned, platform)
+        if matched_decorations:
+            rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
         local_path = published_dir / f"{platform}.jpg"
         rendered.save(local_path, format="JPEG", quality=90)
         local_paths[platform] = local_path

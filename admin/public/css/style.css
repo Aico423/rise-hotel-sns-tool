@@ -375,3 +375,20 @@ button:disabled {
   text-align: center;
   padding: 24px;
 }
+
+.hint-text {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  margin: -8px 0 20px;
+}
+
+/* 透過PNGのプレビュー・サムネイルの背景に市松模様を敷いて、透明部分を見やすくする */
+.dropzone-transparent .preview,
+.thumb-transparent {
+  background: repeating-conic-gradient(#3a3f4b 0% 25%, #262a33 0% 50%) 0 0 / 16px 16px;
+}
+
+.decoration-card img {
+  object-fit: contain;
+  padding: 10px;
+}
