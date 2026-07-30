@@ -4,6 +4,7 @@
   const textBody = document.getElementById("text-body");
   const categorySelect = document.getElementById("category");
   const tagsInput = document.getElementById("tags-input");
+  const materialPicker = document.getElementById("material-picker");
   const platformsContainer = document.getElementById("platforms-checkboxes");
   const form = document.getElementById("text-form");
   const submitBtn = document.getElementById("submit-btn");
@@ -21,6 +22,9 @@
     const config = await Api.getConfig();
     categorySelect.innerHTML = config.text_categories.map((c) => `<option value="${c}">${c}</option>`).join("");
     renderCheckboxGroup(platformsContainer, "platform", config.platforms, [], PLATFORM_LABELS);
+
+    const { materials } = await Api.listMaterials();
+    renderMaterialPicker(materialPicker, materials, []);
   } catch (e) {
     showMessage(e.message, "error");
   }
@@ -52,6 +56,7 @@
         text,
         category: categorySelect.value,
         tags: tagsInput.value,
+        material_ids: getCheckedValues(materialPicker),
         platforms,
       });
       showMessage("文言を登録しました。一覧画面に戻ります…", "success");

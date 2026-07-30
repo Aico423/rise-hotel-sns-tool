@@ -55,6 +55,12 @@ DEFAULT_CONFIG = {
 }
 
 
+def _parse_material_ids(raw) -> list[str]:
+    if not isinstance(raw, list):
+        return []
+    return [str(item).strip() for item in raw if str(item).strip()]
+
+
 def _parse_tags(raw) -> list[str]:
     """カンマ区切りの文字列、または配列の両方を受け付けて、空白除去済みのリストにする。"""
     if isinstance(raw, list):
@@ -240,6 +246,7 @@ def _create_text():
         "text": text_value,
         "category": body.get("category") or "",
         "tags": _parse_tags(body.get("tags")),
+        "material_ids": _parse_material_ids(body.get("material_ids")),
         "platforms": {
             "x": bool((body.get("platforms") or {}).get("x")),
             "instagram": bool((body.get("platforms") or {}).get("instagram")),
@@ -273,6 +280,8 @@ def _update_text(text_id: str):
                     t["category"] = body["category"]
                 if "tags" in body:
                     t["tags"] = _parse_tags(body["tags"])
+                if "material_ids" in body:
+                    t["material_ids"] = _parse_material_ids(body["material_ids"])
                 if "platforms" in body:
                     platforms = body["platforms"] or {}
                     t["platforms"] = {

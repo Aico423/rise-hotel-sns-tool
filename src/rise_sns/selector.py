@@ -67,11 +67,28 @@ def select_material(materials: list[dict], history: list[dict], today: Optional[
     return random.choice(candidates)
 
 
-def select_text(texts: list[dict], history: list[dict], today: Optional[date] = None) -> dict:
+def _text_applies_to_material(text: dict, material_id: str) -> bool:
+    """material_idsが未設定・空の文言はどの写真にも使える汎用文言として扱う。"""
+    material_ids = text.get("material_ids") or []
+    return not material_ids or material_id in material_ids
+
+
+def select_text(
+    texts: list[dict],
+    history: list[dict],
+    today: Optional[date] = None,
+    material_id: Optional[str] = None,
+) -> dict:
+    """material_idを指定すると、その写真に紐づけられた文言（または汎用文言）だけから選ぶ。
+
+    これにより「8人部屋の写真」に「2人部屋の文言」が付く、といった内容の不一致を防ぐ。
+    """
     today = today or date.today()
     active = [t for t in texts if t.get("active", True)]
+    if material_id is not None:
+        active = [t for t in active if _text_applies_to_material(t, material_id)]
     if not active:
-        raise NoEligibleTextError("投稿に使える文言が登録されていません。")
+        raise NoEligibleTextError("この写真に使える投稿文言が登録されていません。")
 
     recent_ids = _recent_ids(history, "text_id", today, config.POST_HISTORY_LOOKBACK_DAYS)
     fresh_pool = [t for t in active if t.get("id") not in recent_ids]
@@ -108,7 +125,7 @@ def select_daily_pair(
 ) -> DailySelection:
     today = today or date.today()
     material = select_material(materials, history, today)
-    text = select_text(texts, history, today)
+    text = select_text(texts, history, today, material_id=material.get("id"))
     platforms_for_text = [
         platform for platform, enabled in text.get("platforms", {}).items() if enabled
     ]

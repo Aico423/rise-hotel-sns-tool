@@ -200,6 +200,11 @@
         <div class="meta">
           <div class="tag-list">
             ${text.category ? `<span class="tag">${escapeHtml(text.category)}</span>` : ""}
+            ${
+              text.material_ids && text.material_ids.length > 0
+                ? `<span class="tag">写真指定あり（${text.material_ids.length}枚）</span>`
+                : '<span class="tag">どの写真にも使用可</span>'
+            }
             ${tagBadges(text.tags)}
             ${platformBadges(text.platforms)}
           </div>
@@ -245,7 +250,7 @@
     });
   }
 
-  function openTextEditor(panel, text) {
+  async function openTextEditor(panel, text) {
     panel.innerHTML = `
       <div class="field">
         <label class="field-label">文言</label>
@@ -258,6 +263,10 @@
       <div class="field">
         <label class="field-label">関連キーワード（任意）</label>
         <input type="text" class="edit-tags" placeholder="例：東京, 新宿, 予約訴求" />
+      </div>
+      <div class="field">
+        <label class="field-label">この文言を使う写真（選ばなければどの写真にも使われます）</label>
+        <div class="material-pick-grid edit-material-picker"></div>
       </div>
       <div class="field">
         <label class="field-label">どのSNSに使いますか？</label>
@@ -275,6 +284,14 @@
     categorySelect.innerHTML = config.text_categories
       .map((c) => `<option value="${c}" ${c === text.category ? "selected" : ""}>${c}</option>`)
       .join("");
+
+    const materialPicker = panel.querySelector(".edit-material-picker");
+    try {
+      const { materials } = await Api.listMaterials();
+      renderMaterialPicker(materialPicker, materials, text.material_ids || []);
+    } catch (e) {
+      materialPicker.innerHTML = `<p class="empty-state">${escapeHtml(e.message)}</p>`;
+    }
 
     const platformsContainer = panel.querySelector(".edit-platforms");
     const selectedPlatforms = Object.entries(text.platforms || {})
@@ -303,11 +320,18 @@
       const platforms = {};
       selected.forEach((p) => (platforms[p] = true));
       const tagsValue = panel.querySelector(".edit-tags").value;
+      const materialIds = getCheckedValues(materialPicker);
 
       btn.disabled = true;
       btn.textContent = "保存しています…";
       try {
-        await Api.updateText(text.id, { text: newText, category: categorySelect.value, tags: tagsValue, platforms });
+        await Api.updateText(text.id, {
+          text: newText,
+          category: categorySelect.value,
+          tags: tagsValue,
+          material_ids: materialIds,
+          platforms,
+        });
         showMessage("文言を更新しました。", "success");
         await loadTexts();
       } catch (e) {

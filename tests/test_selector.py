@@ -9,12 +9,13 @@ def make_material(id_, seasons, active=True):
     return {"id": id_, "image_path": f"images/{id_}.jpg", "seasons": seasons, "active": active}
 
 
-def make_text(id_, platforms=None, active=True):
+def make_text(id_, platforms=None, active=True, material_ids=None):
     return {
         "id": id_,
         "text": f"text-{id_}",
         "platforms": platforms or {"x": True, "instagram": True, "facebook": True, "google": True},
         "active": active,
+        "material_ids": material_ids or [],
     }
 
 
@@ -83,6 +84,47 @@ def test_compute_creative_tags_handles_missing_optional_fields():
     material = {"id": "a", "seasons": []}
     text = {"id": "t1"}
     assert selector.compute_creative_tags(material, text) == set()
+
+
+def test_select_text_without_material_id_ignores_linking():
+    texts = [make_text("a", material_ids=["room-801"])]
+    chosen = selector.select_text(texts, history=[])
+    assert chosen["id"] == "a"
+
+
+def test_select_text_with_material_id_excludes_unrelated_linked_text():
+    texts = [
+        make_text("room-801-text", material_ids=["room-801"]),
+        make_text("generic-text"),
+    ]
+    chosen = selector.select_text(texts, history=[], material_id="room-601")
+    assert chosen["id"] == "generic-text"
+
+
+def test_select_text_with_material_id_includes_matching_linked_text():
+    texts = [
+        make_text("room-801-text", material_ids=["room-801"]),
+        make_text("room-601-text", material_ids=["room-601"]),
+    ]
+    chosen = selector.select_text(texts, history=[], material_id="room-801")
+    assert chosen["id"] == "room-801-text"
+
+
+def test_select_text_with_material_id_raises_when_only_unrelated_linked_texts_exist():
+    texts = [make_text("room-801-text", material_ids=["room-801"])]
+    with pytest.raises(selector.NoEligibleTextError):
+        selector.select_text(texts, history=[], material_id="room-601")
+
+
+def test_select_daily_pair_only_pairs_linked_text_with_its_material():
+    materials = [make_material("room-801", ["通年"])]
+    texts = [
+        make_text("wrong-room-text", material_ids=["room-601"]),
+        make_text("right-room-text", material_ids=["room-801"]),
+    ]
+    result = selector.select_daily_pair(materials, texts, history=[], today=date(2026, 7, 30))
+    assert result.material["id"] == "room-801"
+    assert result.text["id"] == "right-room-text"
 
 
 def test_select_daily_pair_returns_platforms_for_text():

@@ -50,3 +50,38 @@ function renderCheckboxGroup(container, groupName, options, selectedValues, labe
 function getCheckedValues(container) {
   return Array.from(container.querySelectorAll("input[type=checkbox]:checked")).map((el) => el.value);
 }
+
+// 「この文言を使う写真」を選ぶための、サムネイル付きチェックボックス一覧を描画する。
+function renderMaterialPicker(container, materials, selectedIds) {
+  selectedIds = selectedIds || [];
+  container.innerHTML = "";
+
+  if (!materials || materials.length === 0) {
+    container.innerHTML = '<p class="empty-state">まだ写真が登録されていません。</p>';
+    return;
+  }
+
+  materials.forEach((material) => {
+    const item = document.createElement("label");
+    item.className = "material-pick-item";
+    const isChecked = selectedIds.includes(material.id);
+    if (isChecked) item.classList.add("checked");
+
+    const labelText = [material.room_type, ...(material.seasons || [])].filter(Boolean).join("・");
+
+    item.innerHTML = `
+      <img src="${material.image_url}" alt="客室写真" loading="lazy" />
+      <div class="label-row">
+        <input type="checkbox" value="${material.id}" ${isChecked ? "checked" : ""} />
+        <span>${labelText || "（タグ未設定）"}</span>
+      </div>
+    `;
+
+    const input = item.querySelector("input");
+    input.addEventListener("change", () => {
+      item.classList.toggle("checked", input.checked);
+    });
+
+    container.appendChild(item);
+  });
+}
