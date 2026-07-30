@@ -1,0 +1,7 @@
+{
+  "room_types": ["シングル", "ダブル", "ツイン", "スイート"],
+  "seasons": ["春", "夏", "秋", "冬", "通年"],
+  "features": ["夜景あり", "和室", "広め", "その他"],
+  "text_categories": ["通常訴求", "季節限定", "イベント"],
+  "platforms": ["x", "instagram", "facebook", "google"]
+}

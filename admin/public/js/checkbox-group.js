@@ -1,0 +1,42 @@
+// 投稿先コード -> 画面表示名（専門用語を出さないため、ここで日本語に変換する）。
+const PLATFORM_LABELS = {
+  x: "X",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  google: "Googleビジネスプロフィール",
+};
+
+// タグ選択用のチェックボックス群（丸いピル表示）を描画する共通処理。
+function renderCheckboxGroup(container, groupName, options, selectedValues, labels) {
+  selectedValues = selectedValues || [];
+  labels = labels || {};
+  container.innerHTML = "";
+  options.forEach((value) => {
+    const id = `${groupName}-${value}`;
+    const label = document.createElement("label");
+    label.className = "checkbox-pill";
+    label.setAttribute("for", id);
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.id = id;
+    input.value = value;
+    input.checked = selectedValues.includes(value);
+    if (input.checked) label.classList.add("checked");
+
+    input.addEventListener("change", () => {
+      label.classList.toggle("checked", input.checked);
+    });
+
+    const span = document.createElement("span");
+    span.textContent = labels[value] || value;
+
+    label.appendChild(input);
+    label.appendChild(span);
+    container.appendChild(label);
+  });
+}
+
+function getCheckedValues(container) {
+  return Array.from(container.querySelectorAll("input[type=checkbox]:checked")).map((el) => el.value);
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RISE HOTEL SNS投稿ツール - 素材一覧</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>登録済みの写真・文言の一覧</p>
+  </header>
+  <main>
+    <nav class="tabs">
+      <a href="index.html" class="active">一覧を見る</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+    </nav>
+
+    <div id="message" class="message hidden"></div>
+
+    <section class="card">
+      <h2>登録済みの客室写真</h2>
+      <div id="materials-list" class="loading">読み込み中です…</div>
+    </section>
+
+    <section class="card">
+      <h2>登録済みの投稿文言・キーワード</h2>
+      <div id="texts-list" class="loading">読み込み中です…</div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/list.js"></script>
+</body>
+</html>

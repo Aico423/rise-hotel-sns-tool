@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+.vercel/
+assets/fonts/*.ttf
+assets/fonts/*.otf
+node_modules/
