@@ -197,6 +197,19 @@
       "active": true,
       "created_at": "2026-07-30T11:24:40.492340+00:00",
       "updated_at": "2026-07-30T11:24:40.492373+00:00"
+    },
+    {
+      "id": "7115540760d6",
+      "image_path": "images/7115540760d6.jpg",
+      "room_type": "スイートルーム",
+      "room_number": "801",
+      "seasons": [
+        "通年"
+      ],
+      "ready_made": true,
+      "active": true,
+      "created_at": "2026-07-30T11:25:10.825653+00:00",
+      "updated_at": "2026-07-30T11:25:10.825690+00:00"
     }
   ]
 }
