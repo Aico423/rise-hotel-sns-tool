@@ -146,6 +146,7 @@ def _create_material():
         "room_type": body.get("room_type") or "",
         "seasons": body.get("seasons") or [],
         "features": body.get("features") or [],
+        "ready_made": bool(body.get("ready_made")),
         "active": True,
         "created_at": _now(),
         "updated_at": _now(),
@@ -175,6 +176,8 @@ def _update_material(material_id: str):
                     m["seasons"] = body["seasons"]
                 if "features" in body:
                     m["features"] = body["features"]
+                if "ready_made" in body:
+                    m["ready_made"] = bool(body["ready_made"])
                 if "active" in body:
                     m["active"] = bool(body["active"])
                 m["updated_at"] = _now()

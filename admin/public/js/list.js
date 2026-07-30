@@ -64,6 +64,7 @@
             ${material.room_type ? `<span class="tag">${escapeHtml(material.room_type)}</span>` : ""}
             ${tagBadges(material.seasons)}
             ${tagBadges(material.features)}
+            ${material.ready_made ? '<span class="tag">完成写真</span>' : ""}
           </div>
           <div class="card-actions">
             <button type="button" class="secondary edit-btn">編集する</button>
@@ -121,10 +122,23 @@
         <label class="field-label">特徴</label>
         <div class="checkbox-grid edit-features"></div>
       </div>
+      <div class="field">
+        <label class="checkbox-pill">
+          <input type="checkbox" class="edit-ready-made" />
+          <span>この写真はすでに人物が入った完成写真です</span>
+        </label>
+      </div>
       <div class="button-row">
         <button type="button" class="save-btn">保存する</button>
       </div>
     `;
+
+    const readyMadeCheckbox = panel.querySelector(".edit-ready-made");
+    readyMadeCheckbox.checked = !!material.ready_made;
+    readyMadeCheckbox.closest(".checkbox-pill").classList.toggle("checked", readyMadeCheckbox.checked);
+    readyMadeCheckbox.addEventListener("change", () => {
+      readyMadeCheckbox.closest(".checkbox-pill").classList.toggle("checked", readyMadeCheckbox.checked);
+    });
 
     const roomTypeSelect = panel.querySelector(".edit-room-type");
     roomTypeSelect.innerHTML = config.room_types
@@ -145,6 +159,7 @@
           room_type: roomTypeSelect.value,
           seasons: getCheckedValues(seasonsContainer),
           features: getCheckedValues(featuresContainer),
+          ready_made: readyMadeCheckbox.checked,
         });
         showMessage("写真の内容を更新しました。", "success");
         await loadMaterials();

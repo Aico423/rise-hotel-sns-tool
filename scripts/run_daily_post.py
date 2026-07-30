@@ -109,12 +109,18 @@ def run() -> int:
 
     room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
 
-    try:
-        generated = image_generator.generate_composite_image(room_photo, text["text"])
-    except image_generator.ImageGenerationError as exc:
-        logger.error(str(exc))
-        notifier.notify_failure(f"画像生成に失敗したため本日の投稿をスキップしました: {exc}")
-        return 1
+    if material.get("ready_made"):
+        # すでに人物が入った完成写真として登録されている場合は、AIによる人物合成を行わずそのまま使う
+        # （毎回の生成に伴う予測不能な仕上がり・マナー違反等のリスクを避けるため）。
+        logger.info("この写真は完成写真として登録されているため、AI画像生成をスキップします。")
+        generated = room_photo
+    else:
+        try:
+            generated = image_generator.generate_composite_image(room_photo, text["text"])
+        except image_generator.ImageGenerationError as exc:
+            logger.error(str(exc))
+            notifier.notify_failure(f"画像生成に失敗したため本日の投稿をスキップしました: {exc}")
+            return 1
 
     captioned = caption_overlay.add_caption(generated, text["text"])
 

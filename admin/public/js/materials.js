@@ -8,6 +8,7 @@
   const roomTypeSelect = document.getElementById("room-type");
   const seasonsContainer = document.getElementById("seasons-checkboxes");
   const featuresContainer = document.getElementById("features-checkboxes");
+  const readyMadeCheckbox = document.getElementById("ready-made-checkbox");
   const form = document.getElementById("material-form");
   const submitBtn = document.getElementById("submit-btn");
 
@@ -36,6 +37,10 @@
       showMessage(e.message, "error");
     }
   }
+
+  readyMadeCheckbox.addEventListener("change", () => {
+    readyMadeCheckbox.closest(".checkbox-pill").classList.toggle("checked", readyMadeCheckbox.checked);
+  });
 
   pickFileBtn.addEventListener("click", () => fileInput.click());
   fileInput.addEventListener("change", (e) => handleFile(e.target.files[0]));
@@ -80,6 +85,7 @@
         room_type: roomTypeSelect.value,
         seasons: getCheckedValues(seasonsContainer),
         features: getCheckedValues(featuresContainer),
+        ready_made: readyMadeCheckbox.checked,
       });
       showMessage("写真を登録しました。一覧画面に戻ります…", "success");
       setTimeout(() => {
