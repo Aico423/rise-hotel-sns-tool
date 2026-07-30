@@ -10,8 +10,14 @@ from __future__ import annotations
 import base64
 import binascii
 import re
+import sys
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+
+# Vercelのランタイムがこのファイルを読み込む際、同じフォルダ内のモジュールを
+# importできるとは限らないため、明示的にこのファイルの場所をパスに追加しておく。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from flask import Flask, jsonify, request
 
