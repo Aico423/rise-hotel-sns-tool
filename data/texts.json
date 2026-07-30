@@ -2,7 +2,7 @@
   "texts": [
     {
       "id": "5414c1408ff8",
-      "text": "Queen bed×8\n3 bedroom\nUp to 16 pax\nKitchen, cutlery,\nwashin machine, dryer",
+      "text": "Room 801 is available to book!\n\nQueen bed×8\n3 bedroom\nUp to 16 pax\nKitchen, cutlery,\nwashin machine, dryer",
       "category": "通常訴求",
       "tags": [],
       "platforms": {
@@ -13,7 +13,8 @@
       },
       "active": true,
       "created_at": "2026-07-30T09:07:33.041312+00:00",
-      "updated_at": "2026-07-30T09:07:33.041335+00:00"
+      "updated_at": "2026-07-30T10:27:12.232492+00:00",
+      "material_ids": []
     }
   ]
 }
