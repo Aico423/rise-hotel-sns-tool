@@ -69,10 +69,19 @@ def _handle_github_error(exc: GithubClientError):
     return _error(str(exc) or "保存に失敗しました。もう一度お試しください。", 502)
 
 
-@app.route("/api/_debug", methods=["GET"])
-@app.route("/api/_debug/<path:_ignored>", methods=["GET"])
-def debug_path(_ignored=None):
-    return jsonify({"path": request.path, "full_path": request.full_path, "script_root": request.script_root})
+@app.route("/", defaults={"_catchall": ""})
+@app.route("/<path:_catchall>")
+def debug_path(_catchall):
+    return jsonify(
+        {
+            "path": request.path,
+            "full_path": request.full_path,
+            "script_root": request.script_root,
+            "base_url": request.base_url,
+            "environ_PATH_INFO": request.environ.get("PATH_INFO"),
+            "environ_SCRIPT_NAME": request.environ.get("SCRIPT_NAME"),
+        }
+    )
 
 
 @app.route("/api/config", methods=["GET"])
