@@ -1,3 +1,18 @@
 {
-  "texts": []
+  "texts": [
+    {
+      "id": "e0537d527c55",
+      "text": "テスト文言です",
+      "category": "通常訴求",
+      "platforms": {
+        "x": true,
+        "instagram": false,
+        "facebook": false,
+        "google": false
+      },
+      "active": true,
+      "created_at": "2026-07-30T08:15:49.430537+00:00",
+      "updated_at": "2026-07-30T08:15:49.430568+00:00"
+    }
+  ]
 }
