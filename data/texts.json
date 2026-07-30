@@ -15,6 +15,26 @@
       "created_at": "2026-07-30T09:07:33.041312+00:00",
       "updated_at": "2026-07-30T10:27:12.232492+00:00",
       "material_ids": []
+    },
+    {
+      "id": "48a05a909e9a",
+      "text": "{room_number}\nQueen bed×8\n3 bedroom\nUp to 16 pax\nKitchen, cutlery,\nwashin machine, dryer\n\n{bed_size}\n{max_guests}",
+      "category": "通常訴求",
+      "tags": [
+        "BOOK NOW"
+      ],
+      "material_ids": [
+        "a60dd8dd307c"
+      ],
+      "platforms": {
+        "x": true,
+        "instagram": true,
+        "facebook": true,
+        "google": true
+      },
+      "active": true,
+      "created_at": "2026-07-30T11:17:37.086827+00:00",
+      "updated_at": "2026-07-30T11:17:37.086860+00:00"
     }
   ]
 }
