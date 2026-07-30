@@ -1,23 +1,6 @@
 {
   "texts": [
     {
-      "id": "f9fb144e4850",
-      "text": "Room 801 is available to book!",
-      "category": "通常訴求",
-      "tags": [
-        "BOOK NOW"
-      ],
-      "platforms": {
-        "x": true,
-        "instagram": false,
-        "facebook": false,
-        "google": false
-      },
-      "active": true,
-      "created_at": "2026-07-30T09:06:02.013667+00:00",
-      "updated_at": "2026-07-30T09:06:02.013700+00:00"
-    },
-    {
       "id": "5414c1408ff8",
       "text": "Queen bed×8\n3 bedroom\nUp to 16 pax\nKitchen, cutlery,\nwashin machine, dryer",
       "category": "通常訴求",
