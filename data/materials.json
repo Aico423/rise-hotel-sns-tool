@@ -184,6 +184,19 @@
       "active": true,
       "created_at": "2026-07-30T11:24:23.502388+00:00",
       "updated_at": "2026-07-30T11:24:23.502433+00:00"
+    },
+    {
+      "id": "4f27dc7c4a62",
+      "image_path": "images/4f27dc7c4a62.jpg",
+      "room_type": "スイートルーム",
+      "room_number": "",
+      "seasons": [
+        "通年"
+      ],
+      "ready_made": true,
+      "active": true,
+      "created_at": "2026-07-30T11:24:40.492340+00:00",
+      "updated_at": "2026-07-30T11:24:40.492373+00:00"
     }
   ]
 }
