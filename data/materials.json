@@ -158,6 +158,19 @@
       "active": true,
       "created_at": "2026-07-30T11:23:16.185954+00:00",
       "updated_at": "2026-07-30T11:23:16.185993+00:00"
+    },
+    {
+      "id": "2cd03d747b50",
+      "image_path": "images/2cd03d747b50.jpg",
+      "room_type": "Type C",
+      "room_number": "202",
+      "seasons": [
+        "通年"
+      ],
+      "ready_made": true,
+      "active": true,
+      "created_at": "2026-07-30T11:23:56.305258+00:00",
+      "updated_at": "2026-07-30T11:23:56.305296+00:00"
     }
   ]
 }
