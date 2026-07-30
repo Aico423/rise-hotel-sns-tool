@@ -15,6 +15,7 @@ const Api = (() => {
     let res;
     try {
       res = await fetch(url, {
+        credentials: "same-origin",
         headers: { "Content-Type": "application/json", ...(options.headers || {}) },
         ...options,
       });
@@ -27,6 +28,11 @@ const Api = (() => {
       body = await res.json();
     } catch (e) {
       body = null;
+    }
+
+    if (res.status === 401 && !url.includes("resource=session") && !url.includes("resource=login")) {
+      window.location.href = "login.html";
+      throw new Error("ログインが必要です。");
     }
 
     if (!res.ok) {
@@ -59,5 +65,15 @@ const Api = (() => {
     updateDecoration: (id, payload) =>
       request(withQuery({ resource: "decorations", id }), { method: "PUT", body: JSON.stringify(payload) }),
     deleteDecoration: (id) => request(withQuery({ resource: "decorations", id }), { method: "DELETE" }),
+
+    getBootstrapStatus: () => request(withQuery({ resource: "bootstrap" })),
+    bootstrap: (payload) => request(withQuery({ resource: "bootstrap" }), { method: "POST", body: JSON.stringify(payload) }),
+    login: (payload) => request(withQuery({ resource: "login" }), { method: "POST", body: JSON.stringify(payload) }),
+    logout: () => request(withQuery({ resource: "logout" }), { method: "POST" }),
+    getSession: () => request(withQuery({ resource: "session" })),
+
+    listUsers: () => request(withQuery({ resource: "users" })),
+    createUser: (payload) => request(withQuery({ resource: "users" }), { method: "POST", body: JSON.stringify(payload) }),
+    deleteUser: (email) => request(withQuery({ resource: "users", id: email }), { method: "DELETE" }),
   };
 })();

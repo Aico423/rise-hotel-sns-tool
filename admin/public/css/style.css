@@ -393,6 +393,16 @@ button:disabled {
   padding: 10px;
 }
 
+.login-main {
+  max-width: 420px;
+  margin: 60px auto;
+  padding: 0 16px;
+}
+
+.login-card h2 {
+  margin-top: 0;
+}
+
 .material-pick-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));

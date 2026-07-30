@@ -20,6 +20,9 @@
     messageEl.className = "message hidden";
   }
 
+  const currentUser = await requireLogin();
+  if (!currentUser) return;
+
   try {
     const config = await Api.getConfig();
     categorySelect.innerHTML = config.text_categories.map((c) => `<option value="${c}">${c}</option>`).join("");

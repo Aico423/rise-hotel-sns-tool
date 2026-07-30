@@ -25,13 +25,27 @@ from pathlib import Path
 # importできるとは限らないため、明示的にこのファイルの場所をパスに追加しておく。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from flask import Flask, jsonify, request
+import os
+
+from flask import Flask, jsonify, request, session
 
 import github_client
+import user_store
 from github_client import GithubClientError
+from user_store import UserStoreError
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
+# セッションの署名に使う鍵。Vercelの環境変数 FLASK_SECRET_KEY として設定する。
+# 空文字列は「安全でない既定鍵」として黙って使われてしまう（Flaskはstrなら何でも受け付ける）ため、
+# 未設定の場合は明示的にNoneにしておく。Noneならログイン時にFlask側が例外を出して停止するため、
+# 「未設定のまま安全でない状態で動いてしまう」事故を防げる。
+app.secret_key = os.environ.get("FLASK_SECRET_KEY") or None
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=True,
+)
 
 MATERIALS_PATH = "data/materials.json"
 TEXTS_PATH = "data/texts.json"
@@ -105,6 +119,96 @@ def _decode_image(image_base64: str):
 @app.errorhandler(GithubClientError)
 def _handle_github_error(exc: GithubClientError):
     return _error(str(exc) or "保存に失敗しました。もう一度お試しください。", 502)
+
+
+@app.errorhandler(UserStoreError)
+def _handle_user_store_error(exc: UserStoreError):
+    return _error(str(exc) or "認証処理に失敗しました。", 502)
+
+
+# ---------------------------------------------------------------------------
+# 認証（ログイン・ログアウト・初期設定・ユーザー管理）
+# ---------------------------------------------------------------------------
+
+def _current_user():
+    email = session.get("email")
+    if not email:
+        return None
+    return {"email": email, "role": session.get("role", "user")}
+
+
+def _get_bootstrap():
+    return jsonify({"needs_setup": not user_store.any_users_exist()})
+
+
+def _post_bootstrap():
+    if user_store.any_users_exist():
+        return _error("すでにアカウントが作成されているため、この操作は行えません。", 403)
+
+    body = request.get_json(silent=True) or {}
+    try:
+        user = user_store.create_user(body.get("email") or "", body.get("password") or "", "admin")
+    except UserStoreError as exc:
+        return _error(str(exc))
+
+    session.permanent = True
+    session["email"] = user["email"]
+    session["role"] = user["role"]
+    return jsonify({"email": user["email"], "role": user["role"]}), 201
+
+
+def _post_login():
+    body = request.get_json(silent=True) or {}
+    email = body.get("email") or ""
+    password = body.get("password") or ""
+
+    user = user_store.verify_password(email, password)
+    if not user:
+        return _error("メールアドレスまたはパスワードが正しくありません。", 401)
+
+    session.permanent = True
+    session["email"] = user["email"]
+    session["role"] = user["role"]
+    return jsonify(user)
+
+
+def _post_logout():
+    session.clear()
+    return jsonify({"ok": True})
+
+
+def _get_session_status():
+    user = _current_user()
+    if not user:
+        return jsonify({"logged_in": False})
+    return jsonify({"logged_in": True, "email": user["email"], "role": user["role"]})
+
+
+def _list_users():
+    return jsonify({"users": user_store.list_users()})
+
+
+def _create_user():
+    body = request.get_json(silent=True) or {}
+    try:
+        user = user_store.create_user(
+            body.get("email") or "",
+            body.get("password") or "",
+            body.get("role") or "user",
+        )
+    except UserStoreError as exc:
+        return _error(str(exc))
+    return jsonify(user), 201
+
+
+def _delete_user(email: str, current_user: dict):
+    if current_user["email"] == email.strip().lower():
+        return _error("自分自身のアカウントは削除できません。別の管理者に依頼してください。", 400)
+    try:
+        user_store.delete_user(email)
+    except UserStoreError as exc:
+        return _error(str(exc), 404)
+    return jsonify({"users": user_store.list_users()})
 
 
 # ---------------------------------------------------------------------------
@@ -451,6 +555,39 @@ def api_entry():
     resource = request.args.get("resource")
     item_id = request.args.get("id")
     method = request.method
+
+    # ログイン前でもアクセスできるリソース（初期設定・ログイン・ログイン状態確認）
+    if resource == "bootstrap":
+        if method == "GET":
+            return _get_bootstrap()
+        if method == "POST":
+            return _post_bootstrap()
+        return _error("不明なリクエストです。", 404)
+
+    if resource == "login" and method == "POST":
+        return _post_login()
+
+    if resource == "logout" and method == "POST":
+        return _post_logout()
+
+    if resource == "session" and method == "GET":
+        return _get_session_status()
+
+    # ここから先はログインが必要
+    current_user = _current_user()
+    if not current_user:
+        return _error("ログインが必要です。もう一度ログインしてください。", 401)
+
+    if resource == "users":
+        if current_user["role"] != "admin":
+            return _error("この操作には管理者権限が必要です。", 403)
+        if method == "GET":
+            return _list_users()
+        if method == "POST":
+            return _create_user()
+        if method == "DELETE" and item_id:
+            return _delete_user(item_id, current_user)
+        return _error("不明なリクエストです。", 404)
 
     if resource == "config" and method == "GET":
         return _get_config()

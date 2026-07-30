@@ -476,6 +476,9 @@
 
   // ---------------- 初期化 ----------------
 
+  const currentUser = await requireLogin();
+  if (!currentUser) return;
+
   try {
     config = await Api.getConfig();
   } catch (e) {

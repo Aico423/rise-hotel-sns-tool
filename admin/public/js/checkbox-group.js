@@ -1,3 +1,46 @@
+// ログイン状態を確認し、未ログインならlogin.htmlへ、管理者専用ページで管理者でなければ
+// index.htmlへ移動する。管理者のときだけ「ユーザー管理」リンクを表示する。
+// 戻り値: ログイン済みユーザー情報（{email, role}）。ページ遷移が発生した場合はnullを返す。
+async function requireLogin({ adminOnly = false } = {}) {
+  let sessionInfo;
+  try {
+    sessionInfo = await Api.getSession();
+  } catch (e) {
+    window.location.href = "login.html";
+    return null;
+  }
+
+  if (!sessionInfo.logged_in) {
+    window.location.href = "login.html";
+    return null;
+  }
+
+  if (adminOnly && sessionInfo.role !== "admin") {
+    window.location.href = "index.html";
+    return null;
+  }
+
+  const usersNavLink = document.querySelector('a[href="users.html"]');
+  if (usersNavLink && sessionInfo.role !== "admin") {
+    usersNavLink.remove();
+  }
+
+  const logoutLink = document.getElementById("logout-link");
+  if (logoutLink) {
+    logoutLink.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await Api.logout();
+      } catch (err) {
+        // ログアウト自体が失敗しても、ログイン画面には戻す
+      }
+      window.location.href = "login.html";
+    });
+  }
+
+  return { email: sessionInfo.email, role: sessionInfo.role };
+}
+
 // 「部屋タイプを挿入」等のボタンを押したときに、textareaのカーソル位置に
 // {room_type} のようなプレースホルダーを挿入する（専門用語を見せずに差し込みができるようにする）。
 function wirePlaceholderButtons(container, textarea) {

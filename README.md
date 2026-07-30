@@ -68,6 +68,8 @@ tests/                 ユニットテスト（pytest）
 | `ENABLE_X` / `ENABLE_INSTAGRAM` / `ENABLE_FACEBOOK` / `ENABLE_GOOGLE_BUSINESS` | 本番投稿の有効/無効スイッチ |
 | `SLACK_WEBHOOK_URL` | 失敗時の通知先（任意） |
 | `GITHUB_PAT` | **管理画面（Vercel）側のみ**で使用。このリポジトリ限定・Contents読み書き権限のみのfine-grained PAT |
+| `FLASK_SECRET_KEY` | **管理画面（Vercel）側のみ**。ログインセッションの署名鍵（ランダムな文字列） |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | **管理画面（Vercel）側のみ**。ユーザーアカウント（メールアドレス・パスワードのハッシュ値）の保存先。Vercel MarketplaceでUpstashを接続すると自動注入される |
 
 ---
 
@@ -137,9 +139,25 @@ Meta・Googleの審査が承認されるまでは `ENABLE_INSTAGRAM` / `ENABLE_F
      （GitHubの Settings → Developer settings → Personal access tokens → Fine-grained tokens で発行）
    - `GITHUB_REPO`: `owner/repo` 形式
    - `GITHUB_BRANCH`: `main`
+   - `FLASK_SECRET_KEY`: ランダムな文字列（ローカルで `python -c "import secrets; print(secrets.token_hex(32))"` を実行して生成したものを貼り付ける）
 5. デプロイ完了後に発行されるURLをスタッフに共有する
 
 管理画面はスタッフがブラウザで開くだけで使えます。API・JSON等の専門用語は画面上に一切表示されません。
+
+### 6-1. ログイン機能とユーザーデータの保存先（Upstash Redis）
+
+管理画面にはメールアドレス・パスワードによるログインが必要です。ユーザーアカウント情報は、
+GitHubリポジトリ（Gitは履歴が残るため、パスワード変更・削除後も古いハッシュ値が残ってしまう）
+ではなく、Upstash Redis（Vercel Marketplace経由）に保存する。
+
+1. Vercelのプロジェクト画面で「**Storage**」タブを開く
+2. 「**Marketplace Database Providers**」（または類似の名称）から「**Upstash**」を探して追加する
+3. Redis形式のデータベースを新規作成し、このプロジェクトに接続（Connect）する
+4. 接続すると `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` が自動的に環境変数として追加される（自分で入力する必要はない）
+5. 再デプロイ後、管理画面のURLを開くと「初期設定：管理者アカウントを作成」画面が表示されるので、
+   最初の管理者アカウント（メールアドレス・パスワード）をブラウザから直接作成する
+   （このパスワードは開発者側では一切見えない・保存されない）
+6. 以降、管理者アカウントでログインし「ユーザー管理」画面から他のスタッフのアカウントを追加できる
 
 ---
 
@@ -172,6 +190,9 @@ Meta・Googleの審査が承認されるまでは `ENABLE_INSTAGRAM` / `ENABLE_F
 - **Instagram/Facebookの画像URL**: Graph APIの `media_type=STORIES` は公開URLを要求するため、
   本番投稿を有効化すると、生成画像を自動でこのリポジトリにコミット・pushします
   （`raw.githubusercontent.com` 経由で参照するため）。
+- **管理画面のCSRF対策**: セッションCookieは `HttpOnly`・`Secure`・`SameSite=Lax` を設定しているが、
+  専用のCSRFトークンまでは実装していない。小規模な社内ツール向けの現実的な落とし所としての判断。
+  より厳密な対策が必要な場合は追加実装を検討すること。
 
 ---
 

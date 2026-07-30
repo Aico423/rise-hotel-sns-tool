@@ -59,6 +59,9 @@
     }
   });
 
+  const currentUser = await requireLogin();
+  if (!currentUser) return;
+
   try {
     const config = await Api.getConfig();
     renderRoomTypeSelect(roomTypeSelect, roomTypeDetail, config.room_types);

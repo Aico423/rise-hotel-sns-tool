@@ -54,6 +54,9 @@
     }
   });
 
+  const currentUser = await requireLogin();
+  if (!currentUser) return;
+
   try {
     const config = await Api.getConfig();
     const placements = config.decoration_placements || Object.keys(PLACEMENT_LABELS);
