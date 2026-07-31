@@ -39,6 +39,7 @@ import github_client
 import user_store
 from github_client import GithubClientError
 from user_store import UserStoreError
+from rise_sns import config as rise_sns_config
 from rise_sns import decorations, image_generator, platform_formats, selector, text_template
 
 app = Flask(__name__)
@@ -79,7 +80,10 @@ DEFAULT_CONFIG = {
         "bottom_right",
         "bottom_center",
     ],
+    "text_style": dict(rise_sns_config.DEFAULT_TEXT_STYLE),
 }
+
+FONT_WEIGHT_CHOICES = list(rise_sns_config.CAPTION_FONT_WEIGHTS.keys())
 
 
 def _parse_material_ids(raw) -> list[str]:
@@ -223,7 +227,38 @@ def _delete_user(email: str, current_user: dict):
 # ---------------------------------------------------------------------------
 
 def _get_config():
-    return jsonify(github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG))
+    config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
+    config_data.setdefault("text_style", dict(rise_sns_config.DEFAULT_TEXT_STYLE))
+    config_data["font_weights"] = FONT_WEIGHT_CHOICES
+    return jsonify(config_data)
+
+
+_HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
+
+def _update_text_style():
+    body = request.get_json(silent=True) or {}
+    color_fields = ("badge_bg_color", "badge_text_color", "accent_color", "body_text_color")
+    weight_fields = ("badge_weight", "accent_weight", "body_weight")
+
+    for field in color_fields:
+        if field in body and body[field] and not _HEX_COLOR_RE.match(body[field]):
+            return _error(f"色の形式が正しくありません（例: #C45A3C）: {field}")
+    for field in weight_fields:
+        if field in body and body[field] not in FONT_WEIGHT_CHOICES:
+            return _error("文字の太さの指定が正しくありません。")
+
+    def _mutate(data):
+        style = data.setdefault("text_style", dict(rise_sns_config.DEFAULT_TEXT_STYLE))
+        for field in color_fields + weight_fields:
+            if field in body and body[field]:
+                style[field] = body[field]
+        return data
+
+    new_data = github_client.update_json_with_retry(
+        CONFIG_PATH, _mutate, message="update text style", default=DEFAULT_CONFIG
+    )
+    return jsonify(new_data["text_style"])
 
 
 # ---------------------------------------------------------------------------
@@ -711,6 +746,10 @@ def _create_preview():
     config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
     room_type_defs = text_template.room_types_by_name(config_data)
     rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+    room_type_def = room_type_defs.get(material.get("room_type", ""), {})
+    badge_text = material.get("room_number") or None
+    accent_text = room_type_def.get("max_guests") or None
+    text_style = config_data.get("text_style")
 
     if material.get("ready_made"):
         # すでに人物が入った完成写真の場合は、AIでの合成をせずそのまま使う（本番投稿と同じ挙動）。
@@ -731,7 +770,10 @@ def _create_preview():
     images = {}
     try:
         for platform in platforms:
-            rendered = platform_formats.render_for_platform(generated, platform, caption_text=rendered_text)
+            rendered = platform_formats.render_for_platform(
+                generated, platform, caption_text=rendered_text,
+                badge_text=badge_text, accent_text=accent_text, text_style=text_style,
+            )
             if matched_decorations:
                 rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
             images[platform] = _image_to_data_url(rendered)
@@ -786,6 +828,9 @@ def api_entry():
 
     if resource == "config" and method == "GET":
         return _get_config()
+
+    if resource == "text_style" and method == "PUT":
+        return _update_text_style()
 
     if resource == "room_types":
         if method == "GET":

@@ -464,3 +464,32 @@ button:disabled {
 .preview-result-item .body {
   padding: 10px 14px;
 }
+
+.style-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: center;
+}
+
+.style-subfield {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+}
+
+.style-subfield input[type="color"] {
+  width: 64px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface-alt);
+  cursor: pointer;
+}
+
+.style-subfield select {
+  min-width: 140px;
+}

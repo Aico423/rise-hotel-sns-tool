@@ -45,6 +45,9 @@ const Api = (() => {
   return {
     getConfig: () => request(withQuery({ resource: "config" })),
 
+    updateTextStyle: (payload) =>
+      request(withQuery({ resource: "text_style" }), { method: "PUT", body: JSON.stringify(payload) }),
+
     listRoomTypes: () => request(withQuery({ resource: "room_types" })),
     createRoomType: (payload) =>
       request(withQuery({ resource: "room_types" }), { method: "POST", body: JSON.stringify(payload) }),

@@ -112,35 +112,69 @@ def _fit_font_size(
     return min_size, lines
 
 
-def _contrasting_text_color(background_color: tuple[int, int, int]) -> tuple[int, int, int]:
-    r, g, b = background_color
-    luminance = 0.299 * r + 0.587 * g + 0.114 * b
-    if luminance > 150:
-        return (45, 32, 28)
-    return (255, 255, 255)
+def _hex_to_rgb(value: Optional[str], default: tuple[int, int, int]) -> tuple[int, int, int]:
+    if not value:
+        return default
+    text = value.strip().lstrip("#")
+    if len(text) != 6:
+        return default
+    try:
+        return (int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16))
+    except ValueError:
+        return default
 
 
-def add_caption_below_photo(
-    canvas: Image.Image,
-    photo_box: tuple[int, int, int, int],
-    text: str,
-    font_path: Optional[Path] = None,
-) -> Image.Image:
-    """写真の下の余白部分（photo_boxの外側）にだけキャプションを描画する。
+def _font_path_for_weight(weight: Optional[str]) -> Path:
+    return config.CAPTION_FONT_WEIGHTS.get(weight or "", config.CAPTION_FONT_WEIGHTS[config.DEFAULT_CAPTION_FONT_WEIGHT])
 
-    写真そのものの上には一切文字を乗せない（写真が見えにくくなる問題を避けるため）。
-    余白の高さに収まるよう、フォントサイズを自動で縮小しながら折り返す。
-    """
-    font_path = font_path or config.CAPTION_FONT_PATH
-    if not font_path.exists():
+
+def _check_fonts_bundled() -> None:
+    missing = [str(p) for p in config.CAPTION_FONT_WEIGHTS.values() if not p.exists()]
+    if missing:
         raise FileNotFoundError(
-            f"日本語フォントが見つかりません: {font_path}\n"
-            "GitHub Actionsのワークフローでフォント取得ステップが実行されているか、"
-            "ローカルの場合は assets/fonts/ にNoto Sans JPを配置しているか確認してください。"
+            "キャプション用フォントが見つかりません: " + ", ".join(missing) + "\n"
+            "admin/assets/fonts/ にPoppinsフォント一式が配置されているか確認してください。"
         )
 
-    if not text.strip():
-        return canvas
+
+def _draw_badge(
+    draw: ImageDraw.ImageDraw,
+    x: float,
+    y: float,
+    text: str,
+    weight: Optional[str],
+    bg_color: tuple[int, int, int],
+    text_color: tuple[int, int, int],
+    font_size: int,
+) -> float:
+    """角丸バッジ（部屋番号など）を描画し、バッジの下端のy座標を返す。"""
+    font = ImageFont.truetype(str(_font_path_for_weight(weight)), font_size)
+    pad_x, pad_y = round(font_size * 0.55), round(font_size * 0.32)
+    text_width = draw.textlength(text, font=font)
+    box = [x, y, x + text_width + pad_x * 2, y + font_size + pad_y * 2]
+    radius = (box[3] - box[1]) / 2
+    draw.rounded_rectangle(box, radius=radius, fill=bg_color)
+    draw.text((x + pad_x, y + pad_y), text, font=font, fill=text_color)
+    return box[3]
+
+
+def compose_caption(
+    canvas: Image.Image,
+    photo_box: tuple[int, int, int, int],
+    body_text: str,
+    badge_text: Optional[str] = None,
+    accent_text: Optional[str] = None,
+    style: Optional[dict] = None,
+) -> Image.Image:
+    """写真の下の余白部分に、部屋番号バッジ→強調ワード→本文の順で装飾付きキャプションを描画する。
+
+    写真そのものの上には一切文字を乗せない（写真が見えにくくなる問題を避けるため）。
+    style未指定のキーは config.DEFAULT_TEXT_STYLE の既定値（色・太さ）で補う。
+    """
+    _check_fonts_bundled()
+    merged_style = {**config.DEFAULT_TEXT_STYLE, **(style or {})}
+    badge_text = str(badge_text) if badge_text is not None else None
+    accent_text = str(accent_text) if accent_text is not None else None
 
     width, height = canvas.size
     _, _, _, photo_bottom = photo_box
@@ -149,29 +183,43 @@ def add_caption_below_photo(
     if margin_height <= 0:
         return canvas
 
-    side_padding = round(width * 0.06)
-    vertical_padding = round(margin_height * 0.12)
-    max_text_width = width - 2 * side_padding
-    max_text_height = margin_height - 2 * vertical_padding
-
     result = canvas.convert("RGB")
     draw = ImageDraw.Draw(result)
 
-    background_color = result.getpixel((side_padding, margin_top + 1))
-    text_color = _contrasting_text_color(background_color)
+    side_padding = round(width * 0.06)
+    y = margin_top + round(margin_height * 0.08)
+    bottom_limit = height - round(margin_height * 0.05)
 
-    max_font_size = max(18, height // 28)
-    min_font_size = 16
-    font_size, lines = _fit_font_size(
-        text, draw, font_path, max_text_width, max_text_height, max_font_size, min_font_size
-    )
-    font = ImageFont.truetype(str(font_path), font_size)
+    badge_bg = _hex_to_rgb(merged_style.get("badge_bg_color"), (196, 90, 60))
+    badge_fg = _hex_to_rgb(merged_style.get("badge_text_color"), (255, 255, 255))
+    accent_color = _hex_to_rgb(merged_style.get("accent_color"), (196, 90, 60))
+    body_color = _hex_to_rgb(merged_style.get("body_text_color"), (45, 32, 28))
 
-    line_spacing = int(font_size * 0.35)
-    line_height = font_size + line_spacing
-    y = margin_top + vertical_padding
-    for line in lines:
-        draw.text((side_padding, y), line, font=font, fill=text_color)
-        y += line_height
+    if badge_text and badge_text.strip():
+        badge_font_size = max(24, round(width * 0.041))
+        y = _draw_badge(
+            draw, side_padding, y, badge_text.strip(), merged_style.get("badge_weight"),
+            badge_bg, badge_fg, badge_font_size,
+        )
+        y += round(margin_height * 0.04)
+
+    if accent_text and accent_text.strip():
+        accent_font_size = max(26, round(width * 0.046))
+        accent_font = ImageFont.truetype(str(_font_path_for_weight(merged_style.get("accent_weight"))), accent_font_size)
+        draw.text((side_padding, y), accent_text.strip(), font=accent_font, fill=accent_color)
+        y += accent_font_size + round(margin_height * 0.035)
+
+    if body_text and body_text.strip() and y < bottom_limit:
+        max_text_width = width - 2 * side_padding
+        max_text_height = bottom_limit - y
+        body_font_path = _font_path_for_weight(merged_style.get("body_weight"))
+        max_font_size = max(18, height // 28)
+        font_size, lines = _fit_font_size(body_text, draw, body_font_path, max_text_width, max_text_height, max_font_size, 16)
+        font = ImageFont.truetype(str(body_font_path), font_size)
+        line_spacing = int(font_size * 0.35)
+        line_height = font_size + line_spacing
+        for line in lines:
+            draw.text((side_padding, y), line, font=font, fill=body_color)
+            y += line_height
 
     return result

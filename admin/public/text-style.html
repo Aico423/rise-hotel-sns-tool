@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>文字の装飾の設定 | RISE HOTEL SNS投稿ツール</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>文字の装飾の設定</p>
+  </header>
+  <main>
+    <nav class="tabs">
+      <a href="index.html">一覧にもどる</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+      <a href="decorations.html">スタンプを登録する</a>
+      <a href="preview.html">プレビュー</a>
+      <a href="room-types.html">部屋タイプの設定</a>
+      <a href="text-style.html" class="active">文字の装飾の設定</a>
+      <a href="users.html">ユーザー管理</a>
+      <a href="#" id="logout-link">ログアウト</a>
+    </nav>
+
+    <section class="card">
+      <h2>ストーリーズに焼き込む文字の見た目を設定する</h2>
+      <p class="hint-text">
+        Instagram/Facebookのストーリーズ画像に表示される「部屋番号バッジ」「強調ワード（最大宿泊人数など）」
+        「本文」それぞれの色と太さを設定できます。ここでの設定は、次回のプレビュー・投稿から反映されます。
+        （X・Googleビジネスプロフィールの投稿には文字が焼き込まれないため、ここでの設定は影響しません。）
+      </p>
+      <div id="message" class="message hidden"></div>
+
+      <form id="text-style-form">
+        <div class="field">
+          <label class="field-label">部屋番号バッジ</label>
+          <div class="style-row">
+            <label class="style-subfield">背景色 <input type="color" id="badge-bg-color" /></label>
+            <label class="style-subfield">文字色 <input type="color" id="badge-text-color" /></label>
+            <label class="style-subfield">太さ <select id="badge-weight"></select></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">強調ワード（最大宿泊人数など）</label>
+          <div class="style-row">
+            <label class="style-subfield">文字色 <input type="color" id="accent-color" /></label>
+            <label class="style-subfield">太さ <select id="accent-weight"></select></label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">本文</label>
+          <div class="style-row">
+            <label class="style-subfield">文字色 <input type="color" id="body-text-color" /></label>
+            <label class="style-subfield">太さ <select id="body-weight"></select></label>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button type="submit" id="submit-btn">保存する</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/text-style.js"></script>
+</body>
+</html>

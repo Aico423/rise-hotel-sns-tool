@@ -44,3 +44,15 @@ def test_render_for_platform_x_ignores_caption_text_and_fills_frame():
 def test_render_for_platform_google_ignores_caption_text_and_fills_frame():
     rendered = platform_formats.render_for_platform(_photo(), "google", caption_text="この文字は画像には入らないはず")
     assert rendered.size == (720, 720)
+
+
+def test_render_for_platform_story_accepts_badge_and_accent_text():
+    rendered = platform_formats.render_for_platform(
+        _photo(), "instagram", caption_text="Kitchen, cutlery", badge_text="601", accent_text="Up to 8 pax"
+    )
+    assert rendered.size == (1080, 1920)
+
+
+def test_render_for_platform_x_ignores_badge_and_accent_text():
+    rendered = platform_formats.render_for_platform(_photo(), "x", badge_text="601", accent_text="Up to 8 pax")
+    assert rendered.size == (1600, 900)

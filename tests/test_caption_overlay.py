@@ -47,53 +47,74 @@ def test_wrap_text_keeps_lone_number_glued_to_following_word():
         assert not line.lstrip().startswith("pax,")
 
 
-def test_bundled_font_exists_and_works_with_default_path():
-    # リポジトリに同梱しているフォント（admin/assets/fonts）が実際に存在し、
-    # font_pathを明示しないデフォルト呼び出しでも動くことを確認する
+def test_bundled_fonts_exist_and_work_with_default_style():
+    # リポジトリに同梱しているPoppinsフォント一式（admin/assets/fonts）が実際に存在し、
+    # styleを明示しないデフォルト呼び出しでも動くことを確認する
     # （Vercel管理画面・GitHub Actionsの両方でこのデフォルトパスが使われるため）。
-    assert config.CAPTION_FONT_PATH.exists()
-    canvas = Image.new("RGB", (800, 1200), color=(220, 210, 200))
-    photo_box = (0, 0, 800, 700)
-    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "客室からの眺めをお楽しみください")
-    assert result.size == (800, 1200)
+    for path in config.CAPTION_FONT_WEIGHTS.values():
+        assert path.exists()
+    canvas = Image.new("RGB", (1080, 1920), color=(220, 210, 200))
+    photo_box = (0, 0, 1080, 1100)
+    result = caption_overlay.compose_caption(
+        canvas, photo_box, "Please enjoy the view from your room", badge_text="601", accent_text="Up to 8 pax"
+    )
+    assert result.size == (1080, 1920)
     assert result.mode == "RGB"
 
 
-def test_add_caption_below_photo_never_draws_over_the_photo_area():
+def test_compose_caption_never_draws_over_the_photo_area():
     # 写真の部分（photo_box内）には一切文字を描画しない（写真が見えにくくなる問題を避けるため）。
     photo_color = (10, 20, 200)
-    canvas = Image.new("RGB", (800, 1200), color=(230, 225, 215))
-    photo_box = (40, 40, 760, 700)
+    canvas = Image.new("RGB", (1080, 1920), color=(230, 225, 215))
+    photo_box = (40, 40, 1040, 1100)
     left, top, right, bottom = photo_box
     for x in range(left, right):
         for y in range(top, bottom):
             canvas.putpixel((x, y), photo_color)
 
-    long_text = "Queen bed×8 3 bedroom Up to 16 pax Kitchen, cutlery, washing machine, dryer available anytime"
-    result = caption_overlay.add_caption_below_photo(canvas, photo_box, long_text)
+    long_text = "Queen bed×8 3 bedroom Kitchen, cutlery, washing machine, dryer available anytime"
+    result = caption_overlay.compose_caption(canvas, photo_box, long_text, badge_text="601", accent_text="Up to 16 pax")
 
     for x in (left, (left + right) // 2, right - 1):
         for y in (top, (top + bottom) // 2, bottom - 1):
             assert result.getpixel((x, y)) == photo_color
 
 
-def test_add_caption_below_photo_does_nothing_without_margin():
+def test_compose_caption_does_nothing_without_margin():
     canvas = Image.new("RGB", (400, 300), color=(200, 200, 200))
     photo_box = (0, 0, 400, 300)  # 余白が無い（写真がキャンバス全体を占める）
-    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "テスト文言")
+    result = caption_overlay.compose_caption(canvas, photo_box, "テスト文言", badge_text="601")
     assert list(result.getdata()) == list(canvas.getdata())
 
 
-def test_add_caption_below_photo_ignores_empty_text():
+def test_compose_caption_ignores_empty_text_and_optional_parts():
     canvas = Image.new("RGB", (400, 300), color=(200, 200, 200))
     photo_box = (0, 0, 400, 150)
-    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "   ")
+    result = caption_overlay.compose_caption(canvas, photo_box, "   ")
     assert list(result.getdata()) == list(canvas.getdata())
 
 
-def test_add_caption_below_photo_raises_clear_error_when_font_missing(tmp_path):
+def test_compose_caption_draws_badge_with_configured_colors():
+    canvas = Image.new("RGB", (1080, 1920), color=(230, 225, 215))
+    photo_box = (0, 0, 1080, 1100)
+    style = {"badge_bg_color": "#112233", "badge_text_color": "#ffffff", "badge_weight": "bold"}
+    result = caption_overlay.compose_caption(canvas, photo_box, "body text", badge_text="601", style=style)
+    # バッジの中央あたり（角丸の影響を受けない位置）の画素が、指定した背景色に塗られていることを確認する
+    side_padding = round(1080 * 0.06)
+    margin_top = 1100
+    badge_top = margin_top + round((1920 - margin_top) * 0.08)
+    badge_font_size = max(24, round(1080 * 0.041))
+    badge_height = badge_font_size + 2 * round(badge_font_size * 0.32)
+    sample_x = side_padding + round(badge_height / 2)  # 角丸の半径ぶん内側なら必ず塗りつぶし範囲
+    sample_y = badge_top + round(badge_height / 2)
+    assert result.getpixel((sample_x, sample_y)) == (0x11, 0x22, 0x33)
+
+
+def test_compose_caption_raises_clear_error_when_fonts_missing(monkeypatch, tmp_path):
     canvas = Image.new("RGB", (400, 300), color=(0, 0, 0))
     photo_box = (0, 0, 400, 150)
-    missing_font = tmp_path / "does-not-exist.ttf"
+    missing = tmp_path / "does-not-exist.ttf"
+    monkeypatch.setattr(config, "CAPTION_FONT_WEIGHTS", {"regular": missing})
+    monkeypatch.setattr(config, "DEFAULT_CAPTION_FONT_WEIGHT", "regular")
     with pytest.raises(FileNotFoundError):
-        caption_overlay.add_caption_below_photo(canvas, photo_box, "テスト", font_path=missing_font)
+        caption_overlay.compose_caption(canvas, photo_box, "テスト")

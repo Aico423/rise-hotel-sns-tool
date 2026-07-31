@@ -4,7 +4,7 @@ Instagram/Facebookのストーリーズは、Graph API経由では画像とは�
 （キャプション欄はストーリーズには表示されない）、投稿文章を見せるには画像そのものに焼き込む
 しかない。ただし文字を写真の上に直接重ねると写真が見えにくくなるため、写真を余白付きで
 縮小して配置し、その余白部分（写真の外）にだけ文字を描画する方式にしている
-（caption_overlay.add_caption_below_photo が実際の描画を担当する）。
+（caption_overlay.compose_caption が実際の描画を担当する）。
 
 一方、Xの投稿本文・Googleビジネスプロフィールの投稿の説明文は、SNS側の実テキスト欄に
 そのまま表示されるため、画像に文字を焼き込む必要が無い（焼き込むと二重表示になってしまう）。
@@ -109,19 +109,25 @@ def render_for_platform(
     image: Image.Image,
     platform: str,
     caption_text: str | None = None,
-    font_path=None,
+    badge_text: str | None = None,
+    accent_text: str | None = None,
+    text_style: dict | None = None,
 ) -> Image.Image:
     """SNSごとのサイズに変換する。
 
-    caption_textは、画像に文字を焼き込む必要があるプラットフォーム（ストーリーズ形式の
-    Instagram/Facebook）でのみ使われる。X・Googleビジネスプロフィールは実テキストの投稿本文欄に
-    表示されるため、ここでは無視して写真をそのまま使う。
+    caption_text・badge_text・accent_textは、画像に文字を焼き込む必要があるプラットフォーム
+    （ストーリーズ形式のInstagram/Facebook）でのみ使われる。badge_textは部屋番号などを角丸バッジで、
+    accent_textは最大宿泊人数などをアクセントカラーの強調テキストとして、caption_textはそれ以外の
+    詳細文を本文として描画する。X・Googleビジネスプロフィールは実テキストの投稿本文欄に表示されるため、
+    ここでは無視して写真をそのまま使う。
     """
     fmt = FORMATS[platform]
     if not fmt.is_story:
         return _fit_cover(image, fmt.width, fmt.height)
 
     canvas, photo_box = fit_with_margin(image, fmt.width, fmt.height)
-    if caption_text:
-        canvas = caption_overlay.add_caption_below_photo(canvas, photo_box, caption_text, font_path=font_path)
+    if caption_text or badge_text or accent_text:
+        canvas = caption_overlay.compose_caption(
+            canvas, photo_box, caption_text or "", badge_text=badge_text, accent_text=accent_text, style=text_style
+        )
     return canvas

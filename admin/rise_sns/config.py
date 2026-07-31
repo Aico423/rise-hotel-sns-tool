@@ -27,6 +27,29 @@ DECORATIONS_PATH = DATA_DIR / "decorations.json"
 FONTS_DIR = Path(__file__).resolve().parents[1] / "assets" / "fonts"
 CAPTION_FONT_PATH = FONTS_DIR / "NotoSansJP-Bold.ttf"
 
+# キャプション装飾（部屋番号バッジ・強調ワード・本文）に使う欧文フォント（Poppins）。
+# ウェイトごとに別ファイルを用意し、管理画面でスタッフが太さを選べるようにする。
+CAPTION_FONT_WEIGHTS: dict[str, Path] = {
+    "regular": FONTS_DIR / "Poppins-Regular.ttf",
+    "medium": FONTS_DIR / "Poppins-Medium.ttf",
+    "semibold": FONTS_DIR / "Poppins-SemiBold.ttf",
+    "bold": FONTS_DIR / "Poppins-Bold.ttf",
+    "extrabold": FONTS_DIR / "Poppins-ExtraBold.ttf",
+}
+DEFAULT_CAPTION_FONT_WEIGHT = "medium"
+
+# キャプション装飾（色・太さ）の既定値。管理画面の「文字の装飾」設定画面で変更でき、
+# 変更内容は data/config.json の text_style に保存される。
+DEFAULT_TEXT_STYLE: dict[str, str] = {
+    "badge_bg_color": "#C45A3C",
+    "badge_text_color": "#FFFFFF",
+    "badge_weight": "extrabold",
+    "accent_color": "#C45A3C",
+    "accent_weight": "bold",
+    "body_text_color": "#2D1E16",
+    "body_weight": "medium",
+}
+
 
 def env_bool(name: str, default: bool) -> bool:
     """"true"/"1"/"yes" のような文字列を真偽値として読み込む（大小文字を無視）。"""

@@ -108,8 +108,13 @@ def run() -> int:
         logger.info("選ばれた文言に投稿先が設定されていないため、本日は投稿を行いません。")
         return 0
 
-    room_type_defs = text_template.room_types_by_name(data_store.load_config())
+    config_data = data_store.load_config()
+    room_type_defs = text_template.room_types_by_name(config_data)
     rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+    room_type_def = room_type_defs.get(material.get("room_type", ""), {})
+    badge_text = material.get("room_number") or None
+    accent_text = room_type_def.get("max_guests") or None
+    text_style = config_data.get("text_style")
 
     room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
 
@@ -146,7 +151,10 @@ def run() -> int:
         if platform not in PUBLISHERS:
             logger.warning("未知の投稿先が指定されています: %s", platform)
             continue
-        rendered = platform_formats.render_for_platform(generated, platform, caption_text=rendered_text)
+        rendered = platform_formats.render_for_platform(
+            generated, platform, caption_text=rendered_text,
+            badge_text=badge_text, accent_text=accent_text, text_style=text_style,
+        )
         if matched_decorations:
             rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
         local_path = published_dir / f"{platform}.jpg"
