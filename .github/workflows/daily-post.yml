@@ -29,14 +29,8 @@ jobs:
       - name: 依存パッケージをインストール
         run: pip install -r requirements.txt
 
-      - name: 日本語フォント(Noto Sans JP)を取得
-        run: |
-          mkdir -p assets/fonts
-          curl -fL "https://raw.githubusercontent.com/google/fonts/main/ofl/notosansjp/NotoSansJP%5Bwght%5D.ttf" \
-            -o assets/fonts/NotoSansJP-Bold.ttf
-
       - name: ユニットテストを実行
-        run: PYTHONPATH=src pytest -q
+        run: PYTHONPATH=admin pytest -q
 
       - name: 本日の投稿を実行
         env:
@@ -73,7 +67,7 @@ jobs:
         run: |
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          PYTHONPATH=src python scripts/run_daily_post.py
+          PYTHONPATH=admin python scripts/run_daily_post.py
 
       - name: 投稿履歴の変更をコミット
         if: always()

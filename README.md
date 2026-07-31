@@ -13,7 +13,7 @@ Meta App Review・Googleのアクセス審査が承認されるまでは無効�
 
 ```
 data/                 素材データ（客室写真・投稿文言・タグ設定・投稿履歴）
-src/rise_sns/          画像生成・キャプション合成・各SNS投稿のPythonパッケージ
+admin/rise_sns/          画像生成・キャプション合成・各SNS投稿のPythonパッケージ
 scripts/run_daily_post.py  GitHub Actionsから毎日呼ばれる本体処理
 .github/workflows/      GitHub Actionsのスケジュール設定
 admin/                 スタッフ向け管理画面（Vercelにデプロイして使う）
@@ -35,7 +35,7 @@ tests/                 ユニットテスト（pytest）
 2. 登録済みの客室写真・投稿文言から、季節や直近の投稿履歴を考慮して1組選ぶ
 3. Google Gemini API（画像編集モデル。通称「Nano Banana 2」）で客室写真に人物等を合成
 4. Pillowでキーワードを含む文章を画像に焼き込み、SNSごとのサイズに変換
-5. 登録済みのスタンプ・ハッシュタグ画像（`src/rise_sns/decorations.py`）から、その日の写真・文言のタグと
+5. 登録済みのスタンプ・ハッシュタグ画像（`admin/rise_sns/decorations.py`）から、その日の写真・文言のタグと
    一致するものを自動選定し、四隅・上下中央のいずれかに合成する（一致するものが無ければ何も挿入しない）
 6. X（有効）／Instagram・Facebook・Google Business（無効化中）へ投稿を試みる
 7. 投稿履歴を記録し、失敗があればSlackへ通知（設定していれば）
@@ -82,17 +82,17 @@ tests/                 ユニットテスト（pytest）
 pip install -r requirements.txt
 cp .env.example .env
 # .envを編集して値を入れる（本番キーが無くてもテストは通ります）
-PYTHONPATH=src pytest -q
+PYTHONPATH=admin pytest -q
 ```
 
-日本語フォント（Noto Sans JP）を使う `caption_overlay` のテストの一部は、Windows同梱フォントが
-ある環境でのみ実行されます（GitHub Actions実行時は、ワークフロー内でフォントを自動取得するため
-問題ありません）。
+日本語フォント（Noto Sans JP）は `assets/fonts/NotoSansJP-Bold.ttf` としてリポジトリに同梱済みです
+（管理画面のプレビュー機能でも同じフォントを使うため、GitHub Actions実行時のみ取得する方式から、
+リポジトリに同梱する方式に変更しています）。
 
 バッチ処理本体を試す場合:
 
 ```bash
-PYTHONPATH=src python scripts/run_daily_post.py
+PYTHONPATH=admin python scripts/run_daily_post.py
 ```
 
 （`ENABLE_X=false` 等にしておけば、実際には投稿されずログにのみ記録されます。）
@@ -199,7 +199,7 @@ GitHubリポジトリ（Gitは履歴が残るため、パスワード変更・�
 ## 9. テスト
 
 ```bash
-PYTHONPATH=src pytest -q
+PYTHONPATH=admin pytest -q
 ```
 
 GitHub Actionsのワークフロー内でも、投稿処理の前に自動でテストが実行されます。

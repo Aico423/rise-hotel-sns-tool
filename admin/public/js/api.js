@@ -75,5 +75,8 @@ const Api = (() => {
     listUsers: () => request(withQuery({ resource: "users" })),
     createUser: (payload) => request(withQuery({ resource: "users" }), { method: "POST", body: JSON.stringify(payload) }),
     deleteUser: (email) => request(withQuery({ resource: "users", id: email }), { method: "DELETE" }),
+
+    createPreview: (payload) =>
+      request(withQuery({ resource: "preview" }), { method: "POST", body: JSON.stringify(payload) }),
   };
 })();

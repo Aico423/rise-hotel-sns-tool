@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import io
 import re
 import sys
 import uuid
@@ -24,15 +25,21 @@ from pathlib import Path
 # Vercelのランタイムがこのファイルを読み込む際、同じフォルダ内のモジュールを
 # importできるとは限らないため、明示的にこのファイルの場所をパスに追加しておく。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+# rise_sns パッケージ（画像生成・キャプション合成等、GitHub Actionsのバッチ処理と共通のロジック）は
+# admin/ 直下にある（Vercelのビルド範囲=Root Directory=adminに収める必要があるため、
+# リポジトリ直下のsrc/ではなくここに置いている）。
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import os
 
 from flask import Flask, jsonify, request, session
+from PIL import Image
 
 import github_client
 import user_store
 from github_client import GithubClientError
 from user_store import UserStoreError
+from rise_sns import caption_overlay, decorations, image_generator, platform_formats, selector, text_template
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -547,6 +554,81 @@ def _delete_decoration(decoration_id: str):
 
 
 # ---------------------------------------------------------------------------
+# プレビュー（実際にAI画像生成を行い、SNSごとの見た目を事前に確認する）
+# ---------------------------------------------------------------------------
+
+def _open_image_from_repo(image_path: str) -> Image.Image:
+    content, _ = github_client.get_file(f"data/{image_path}")
+    if content is None:
+        raise ValueError("画像データが見つかりませんでした。")
+    return Image.open(io.BytesIO(content))
+
+
+def _image_to_data_url(image: Image.Image) -> str:
+    buf = io.BytesIO()
+    image.convert("RGB").save(buf, format="JPEG", quality=90)
+    return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def _create_preview():
+    body = request.get_json(silent=True) or {}
+    material_id = body.get("material_id")
+    text_id = body.get("text_id")
+    if not material_id or not text_id:
+        return _error("写真と文言を選んでください。")
+
+    materials_data = github_client.get_json(MATERIALS_PATH, {"materials": []})
+    material = next((m for m in materials_data.get("materials", []) if m.get("id") == material_id), None)
+    if not material:
+        return _error("対象の写真が見つかりませんでした。", 404)
+
+    texts_data = github_client.get_json(TEXTS_PATH, {"texts": []})
+    text = next((t for t in texts_data.get("texts", []) if t.get("id") == text_id), None)
+    if not text:
+        return _error("対象の文言が見つかりませんでした。", 404)
+
+    platforms = [p for p, enabled in (text.get("platforms") or {}).items() if enabled]
+    if not platforms:
+        return _error("この文言には投稿先のSNSが選択されていません。")
+
+    try:
+        room_photo = _open_image_from_repo(material["image_path"])
+    except ValueError as exc:
+        return _error(str(exc), 404)
+
+    config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
+    room_type_defs = text_template.room_types_by_name(config_data)
+    rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+
+    if material.get("ready_made"):
+        # すでに人物が入った完成写真の場合は、AIでの合成をせずそのまま使う（本番投稿と同じ挙動）。
+        generated = room_photo
+    else:
+        try:
+            generated = image_generator.generate_composite_image(room_photo, rendered_text)
+        except image_generator.ImageGenerationError as exc:
+            return _error(f"画像の生成に失敗しました: {exc}", 502)
+
+    captioned = caption_overlay.add_caption(generated, rendered_text)
+
+    creative_tags = selector.compute_creative_tags(material, text)
+    decorations_data = github_client.get_json(DECORATIONS_PATH, {"decorations": []})
+    matched_decorations = decorations.select_decorations(decorations_data.get("decorations", []), creative_tags)
+
+    def _open_stamp(decoration):
+        return _open_image_from_repo(decoration["image_path"])
+
+    images = {}
+    for platform in platforms:
+        rendered = platform_formats.render_for_platform(captioned, platform)
+        if matched_decorations:
+            rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
+        images[platform] = _image_to_data_url(rendered)
+
+    return jsonify({"images": images, "rendered_text": rendered_text})
+
+
+# ---------------------------------------------------------------------------
 # ルーティング（唯一のエンドポイント。resource/idクエリパラメータで振り分ける）
 # ---------------------------------------------------------------------------
 
@@ -621,5 +703,8 @@ def api_entry():
             return _update_decoration(item_id)
         if method == "DELETE" and item_id:
             return _delete_decoration(item_id)
+
+    if resource == "preview" and method == "POST":
+        return _create_preview()
 
     return _error("不明なリクエストです。", 404)

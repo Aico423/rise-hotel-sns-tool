@@ -5,6 +5,4 @@ __pycache__/
 .venv/
 venv/
 .vercel/
-assets/fonts/*.ttf
-assets/fonts/*.otf
 node_modules/

@@ -21,7 +21,8 @@ from typing import Optional
 
 from PIL import Image
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+# rise_sns パッケージは admin/ 配下にある（Vercel管理画面からもimportできるようにするため）。
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "admin"))
 
 from rise_sns import (  # noqa: E402
     caption_overlay,

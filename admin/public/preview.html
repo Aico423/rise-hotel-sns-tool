@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>プレビュー | RISE HOTEL SNS投稿ツール</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>投稿プレビュー</p>
+  </header>
+  <main>
+    <nav class="tabs" id="nav-tabs">
+      <a href="index.html">一覧にもどる</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+      <a href="decorations.html">スタンプを登録する</a>
+      <a href="preview.html" class="active">プレビュー</a>
+      <a href="users.html">ユーザー管理</a>
+      <a href="#" id="logout-link">ログアウト</a>
+    </nav>
+
+    <section class="card">
+      <h2>投稿されるイメージを事前に確認する</h2>
+      <p class="hint-text">
+        写真と文言を選んで「プレビューを作成する」を押すと、実際に投稿されるのと同じ画像を
+        SNSごとに確認できます。写真が「完成写真」でない場合、プレビューのたびに実際にAIで
+        人物の合成を行うため、少し時間がかかり（15〜30秒程度）、生成費用（1回あたり数円〜
+        十数円程度）が発生します。
+      </p>
+      <div id="message" class="message hidden"></div>
+
+      <div class="field">
+        <label class="field-label" for="material-select">写真を選ぶ</label>
+        <select id="material-select"></select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="text-select">文言を選ぶ</label>
+        <select id="text-select"></select>
+      </div>
+
+      <div class="button-row">
+        <button type="button" id="create-preview-btn">プレビューを作成する</button>
+      </div>
+    </section>
+
+    <section class="card" id="result-card" style="display:none">
+      <h2>プレビュー結果</h2>
+      <p id="rendered-text-preview" class="hint-text"></p>
+      <div id="preview-grid" class="grid"></div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/preview.js"></script>
+</body>
+</html>
