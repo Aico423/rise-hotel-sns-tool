@@ -39,7 +39,7 @@ import github_client
 import user_store
 from github_client import GithubClientError
 from user_store import UserStoreError
-from rise_sns import caption_overlay, decorations, image_generator, platform_formats, selector, text_template
+from rise_sns import decorations, image_generator, platform_formats, selector, text_template
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -721,11 +721,6 @@ def _create_preview():
         except image_generator.ImageGenerationError as exc:
             return _error(f"画像の生成に失敗しました: {exc}", 502)
 
-    try:
-        captioned = caption_overlay.add_caption(generated, rendered_text)
-    except FileNotFoundError as exc:
-        return _error(f"文言の合成に失敗しました: {exc}", 502)
-
     creative_tags = selector.compute_creative_tags(material, text)
     decorations_data = github_client.get_json(DECORATIONS_PATH, {"decorations": []})
     matched_decorations = decorations.select_decorations(decorations_data.get("decorations", []), creative_tags)
@@ -734,11 +729,14 @@ def _create_preview():
         return _open_image_from_repo(decoration["image_path"])
 
     images = {}
-    for platform in platforms:
-        rendered = platform_formats.render_for_platform(captioned, platform)
-        if matched_decorations:
-            rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
-        images[platform] = _image_to_data_url(rendered)
+    try:
+        for platform in platforms:
+            rendered = platform_formats.render_for_platform(generated, platform, caption_text=rendered_text)
+            if matched_decorations:
+                rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
+            images[platform] = _image_to_data_url(rendered)
+    except FileNotFoundError as exc:
+        return _error(f"文言の合成に失敗しました: {exc}", 502)
 
     return jsonify({"images": images, "rendered_text": rendered_text})
 

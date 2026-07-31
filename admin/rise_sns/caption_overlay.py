@@ -60,13 +60,53 @@ def wrap_text(text: str, measure: Callable[[str], float], max_width: float) -> l
     return lines
 
 
-def add_caption(
-    image: Image.Image,
+def _fit_font_size(
+    text: str,
+    draw: ImageDraw.ImageDraw,
+    font_path: Path,
+    max_width: float,
+    max_height: float,
+    max_size: int,
+    min_size: int,
+) -> tuple[int, list[str]]:
+    """max_width×max_heightの枠に収まる最大のフォントサイズと、折り返し済みの行を返す。
+
+    最小サイズでもまだ収まらない場合は、最小サイズのまま返す（枠からのはみ出しは許容し、
+    描画自体が失敗しないようにする）。
+    """
+    size = max_size
+    while size >= min_size:
+        font = ImageFont.truetype(str(font_path), size)
+        lines = wrap_text(text, lambda s: draw.textlength(s, font=font), max_width)
+        line_spacing = int(size * 0.35)
+        line_height = size + line_spacing
+        if len(lines) * line_height <= max_height:
+            return size, lines
+        size -= 2
+    font = ImageFont.truetype(str(font_path), min_size)
+    lines = wrap_text(text, lambda s: draw.textlength(s, font=font), max_width)
+    return min_size, lines
+
+
+def _contrasting_text_color(background_color: tuple[int, int, int]) -> tuple[int, int, int]:
+    r, g, b = background_color
+    luminance = 0.299 * r + 0.587 * g + 0.114 * b
+    if luminance > 150:
+        return (45, 32, 28)
+    return (255, 255, 255)
+
+
+def add_caption_below_photo(
+    canvas: Image.Image,
+    photo_box: tuple[int, int, int, int],
     text: str,
     font_path: Optional[Path] = None,
-    font_size: Optional[int] = None,
 ) -> Image.Image:
-    """画像下部に半透明の帯を敷き、その上に白文字でキャプションを描画した新しい画像を返す。"""
+    """写真の下の余白部分（photo_boxの外側）にだけキャプションを描画する。
+
+    写真そのものの上には一切文字を乗せない（写真が見えにくくなる問題を避けるため）。
+    余白の高さに収まるよう、フォントサイズを自動で縮小しながら折り返す。
+    """
     font_path = font_path or config.CAPTION_FONT_PATH
     if not font_path.exists():
         raise FileNotFoundError(
@@ -75,34 +115,39 @@ def add_caption(
             "ローカルの場合は assets/fonts/ にNoto Sans JPを配置しているか確認してください。"
         )
 
-    base = image.convert("RGBA")
-    width, height = base.size
-    resolved_font_size = font_size or max(24, width // 20)
-    font = ImageFont.truetype(str(font_path), resolved_font_size)
+    if not text.strip():
+        return canvas
 
-    measure_draw = ImageDraw.Draw(base)
-    max_text_width = width * 0.86
+    width, height = canvas.size
+    _, _, _, photo_bottom = photo_box
+    margin_top = photo_bottom
+    margin_height = height - margin_top
+    if margin_height <= 0:
+        return canvas
 
-    def measure(s: str) -> float:
-        return measure_draw.textlength(s, font=font)
+    side_padding = round(width * 0.06)
+    vertical_padding = round(margin_height * 0.12)
+    max_text_width = width - 2 * side_padding
+    max_text_height = margin_height - 2 * vertical_padding
 
-    lines = wrap_text(text, measure, max_text_width)
+    result = canvas.convert("RGB")
+    draw = ImageDraw.Draw(result)
 
-    line_spacing = int(resolved_font_size * 0.4)
-    line_height = resolved_font_size + line_spacing
-    block_height = len(lines) * line_height + line_spacing
-    band_top = max(0, height - block_height - int(resolved_font_size * 0.6))
+    background_color = result.getpixel((side_padding, margin_top + 1))
+    text_color = _contrasting_text_color(background_color)
 
-    band = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-    ImageDraw.Draw(band).rectangle([0, band_top, width, height], fill=(0, 0, 0, 150))
-    composited = Image.alpha_composite(base, band)
+    max_font_size = max(18, height // 28)
+    min_font_size = 16
+    font_size, lines = _fit_font_size(
+        text, draw, font_path, max_text_width, max_text_height, max_font_size, min_font_size
+    )
+    font = ImageFont.truetype(str(font_path), font_size)
 
-    draw = ImageDraw.Draw(composited)
-    y = band_top + line_spacing
+    line_spacing = int(font_size * 0.35)
+    line_height = font_size + line_spacing
+    y = margin_top + vertical_padding
     for line in lines:
-        line_width = measure(line)
-        x = (width - line_width) / 2
-        draw.text((x, y), line, font=font, fill=(255, 255, 255, 255))
+        draw.text((side_padding, y), line, font=font, fill=text_color)
         y += line_height
 
-    return composited.convert("RGB")
+    return result

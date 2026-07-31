@@ -1,12 +1,7 @@
-from pathlib import Path
-
 import pytest
 from PIL import Image
 
 from rise_sns import caption_overlay, config
-
-# CIのUbuntuランナーには無いWindows同梱フォント。ローカルWindows開発機でのみ実描画テストを行う。
-_WINDOWS_TEST_FONT = Path(r"C:\Windows\Fonts\meiryo.ttc")
 
 
 def _fixed_width_measure(char_width: float):
@@ -39,27 +34,53 @@ def test_wrap_text_splits_overlong_single_word():
     assert lines == ["supercalif", "ragilistic", "expialidoc", "ious"]
 
 
-@pytest.mark.skipif(not _WINDOWS_TEST_FONT.exists(), reason="Windows同梱フォントが無い環境ではスキップ")
-def test_add_caption_returns_same_size_rgb_image():
-    base = Image.new("RGB", (800, 600), color=(120, 120, 120))
-    result = caption_overlay.add_caption(base, "夜景が自慢のスイートルーム", font_path=_WINDOWS_TEST_FONT)
-    assert result.size == (800, 600)
-    assert result.mode == "RGB"
-
-
 def test_bundled_font_exists_and_works_with_default_path():
     # リポジトリに同梱しているフォント（admin/assets/fonts）が実際に存在し、
     # font_pathを明示しないデフォルト呼び出しでも動くことを確認する
     # （Vercel管理画面・GitHub Actionsの両方でこのデフォルトパスが使われるため）。
     assert config.CAPTION_FONT_PATH.exists()
-    base = Image.new("RGB", (800, 600), color=(90, 90, 90))
-    result = caption_overlay.add_caption(base, "客室からの眺めをお楽しみください")
-    assert result.size == (800, 600)
+    canvas = Image.new("RGB", (800, 1200), color=(220, 210, 200))
+    photo_box = (0, 0, 800, 700)
+    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "客室からの眺めをお楽しみください")
+    assert result.size == (800, 1200)
     assert result.mode == "RGB"
 
 
-def test_add_caption_raises_clear_error_when_font_missing(tmp_path):
-    base = Image.new("RGB", (400, 300), color=(0, 0, 0))
+def test_add_caption_below_photo_never_draws_over_the_photo_area():
+    # 写真の部分（photo_box内）には一切文字を描画しない（写真が見えにくくなる問題を避けるため）。
+    photo_color = (10, 20, 200)
+    canvas = Image.new("RGB", (800, 1200), color=(230, 225, 215))
+    photo_box = (40, 40, 760, 700)
+    left, top, right, bottom = photo_box
+    for x in range(left, right):
+        for y in range(top, bottom):
+            canvas.putpixel((x, y), photo_color)
+
+    long_text = "Queen bed×8 3 bedroom Up to 16 pax Kitchen, cutlery, washing machine, dryer available anytime"
+    result = caption_overlay.add_caption_below_photo(canvas, photo_box, long_text)
+
+    for x in (left, (left + right) // 2, right - 1):
+        for y in (top, (top + bottom) // 2, bottom - 1):
+            assert result.getpixel((x, y)) == photo_color
+
+
+def test_add_caption_below_photo_does_nothing_without_margin():
+    canvas = Image.new("RGB", (400, 300), color=(200, 200, 200))
+    photo_box = (0, 0, 400, 300)  # 余白が無い（写真がキャンバス全体を占める）
+    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "テスト文言")
+    assert list(result.getdata()) == list(canvas.getdata())
+
+
+def test_add_caption_below_photo_ignores_empty_text():
+    canvas = Image.new("RGB", (400, 300), color=(200, 200, 200))
+    photo_box = (0, 0, 400, 150)
+    result = caption_overlay.add_caption_below_photo(canvas, photo_box, "   ")
+    assert list(result.getdata()) == list(canvas.getdata())
+
+
+def test_add_caption_below_photo_raises_clear_error_when_font_missing(tmp_path):
+    canvas = Image.new("RGB", (400, 300), color=(0, 0, 0))
+    photo_box = (0, 0, 400, 150)
     missing_font = tmp_path / "does-not-exist.ttf"
     with pytest.raises(FileNotFoundError):
-        caption_overlay.add_caption(base, "テスト", font_path=missing_font)
+        caption_overlay.add_caption_below_photo(canvas, photo_box, "テスト", font_path=missing_font)

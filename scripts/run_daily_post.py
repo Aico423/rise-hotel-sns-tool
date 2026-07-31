@@ -25,7 +25,6 @@ from PIL import Image
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "admin"))
 
 from rise_sns import (  # noqa: E402
-    caption_overlay,
     config,
     data_store,
     decorations,
@@ -127,8 +126,6 @@ def run() -> int:
             notifier.notify_failure(f"画像生成に失敗したため本日の投稿をスキップしました: {exc}")
             return 1
 
-    captioned = caption_overlay.add_caption(generated, rendered_text)
-
     creative_tags = selector.compute_creative_tags(material, text)
     matched_decorations = decorations.select_decorations(data_store.load_decorations(), creative_tags)
     if matched_decorations:
@@ -149,7 +146,7 @@ def run() -> int:
         if platform not in PUBLISHERS:
             logger.warning("未知の投稿先が指定されています: %s", platform)
             continue
-        rendered = platform_formats.render_for_platform(captioned, platform)
+        rendered = platform_formats.render_for_platform(generated, platform, caption_text=rendered_text)
         if matched_decorations:
             rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
         local_path = published_dir / f"{platform}.jpg"
