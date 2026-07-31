@@ -227,6 +227,118 @@ def _get_config():
 
 
 # ---------------------------------------------------------------------------
+# 部屋タイプ（名前・ベッドサイズ・最大宿泊人数の表記。投稿文言のプレースホルダーが参照する）
+# ---------------------------------------------------------------------------
+
+def _list_room_types():
+    config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
+    return jsonify({"room_types": config_data.get("room_types", [])})
+
+
+def _create_room_type():
+    body = request.get_json(silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return _error("部屋タイプの名前を入力してください。")
+    record = {
+        "name": name,
+        "bed_size": (body.get("bed_size") or "").strip(),
+        "max_guests": (body.get("max_guests") or "").strip(),
+    }
+
+    def _mutate(data):
+        room_types = data.setdefault("room_types", [])
+        if any(rt.get("name") == name for rt in room_types):
+            raise ValueError("同じ名前の部屋タイプがすでに登録されています。")
+        room_types.append(record)
+        return data
+
+    try:
+        github_client.update_json_with_retry(
+            CONFIG_PATH, _mutate, message=f"add room type {name}", default=DEFAULT_CONFIG
+        )
+    except ValueError as exc:
+        return _error(str(exc))
+
+    return jsonify(record), 201
+
+
+def _rename_room_type_in_materials(old_name: str, new_name: str):
+    def _mutate(data):
+        for m in data.setdefault("materials", []):
+            if m.get("room_type") == old_name:
+                m["room_type"] = new_name
+                m["updated_at"] = _now()
+        return data
+
+    github_client.update_json_with_retry(
+        MATERIALS_PATH,
+        _mutate,
+        message=f"rename room type {old_name} -> {new_name} in materials",
+        default={"materials": []},
+    )
+
+
+def _update_room_type(original_name: str):
+    body = request.get_json(silent=True) or {}
+    rename_info: dict = {}
+
+    def _mutate(data):
+        room_types = data.setdefault("room_types", [])
+        target = next((rt for rt in room_types if rt.get("name") == original_name), None)
+        if not target:
+            raise KeyError("対象の部屋タイプが見つかりませんでした。")
+        if "name" in body:
+            new_name = (body["name"] or "").strip()
+            if not new_name:
+                raise ValueError("部屋タイプの名前を入力してください。")
+            if new_name != original_name:
+                if any(rt.get("name") == new_name for rt in room_types):
+                    raise ValueError("同じ名前の部屋タイプがすでに登録されています。")
+                rename_info["from"] = original_name
+                rename_info["to"] = new_name
+            target["name"] = new_name
+        if "bed_size" in body:
+            target["bed_size"] = (body["bed_size"] or "").strip()
+        if "max_guests" in body:
+            target["max_guests"] = (body["max_guests"] or "").strip()
+        return data
+
+    try:
+        new_data = github_client.update_json_with_retry(
+            CONFIG_PATH, _mutate, message=f"update room type {original_name}", default=DEFAULT_CONFIG
+        )
+    except KeyError as exc:
+        return _error(str(exc).strip('"'), 404)
+    except ValueError as exc:
+        return _error(str(exc))
+
+    if rename_info:
+        _rename_room_type_in_materials(rename_info["from"], rename_info["to"])
+
+    current_name = body.get("name", original_name) or original_name
+    current_name = current_name.strip() if isinstance(current_name, str) else original_name
+    updated = next((rt for rt in new_data["room_types"] if rt.get("name") == current_name), None)
+    return jsonify(updated)
+
+
+def _delete_room_type(name: str):
+    materials_data = github_client.get_json(MATERIALS_PATH, {"materials": []})
+    if any(m.get("room_type") == name for m in materials_data.get("materials", [])):
+        return _error("この部屋タイプを使っている写真があるため削除できません。先に写真側の部屋タイプを変更してください。")
+
+    def _mutate(data):
+        room_types = data.setdefault("room_types", [])
+        data["room_types"] = [rt for rt in room_types if rt.get("name") != name]
+        return data
+
+    new_data = github_client.update_json_with_retry(
+        CONFIG_PATH, _mutate, message=f"delete room type {name}", default=DEFAULT_CONFIG
+    )
+    return jsonify({"room_types": new_data["room_types"]})
+
+
+# ---------------------------------------------------------------------------
 # 客室写真（素材）
 # ---------------------------------------------------------------------------
 
@@ -676,6 +788,16 @@ def api_entry():
 
     if resource == "config" and method == "GET":
         return _get_config()
+
+    if resource == "room_types":
+        if method == "GET":
+            return _list_room_types()
+        if method == "POST":
+            return _create_room_type()
+        if method == "PUT" and item_id:
+            return _update_room_type(item_id)
+        if method == "DELETE" and item_id:
+            return _delete_room_type(item_id)
 
     if resource == "materials":
         if method == "GET":

@@ -68,7 +68,7 @@
       previewGrid.innerHTML = "";
       Object.entries(result.images).forEach(([platform, dataUrl]) => {
         const item = document.createElement("div");
-        item.className = "material-card";
+        item.className = "preview-result-item";
         item.innerHTML = `
           <img src="${dataUrl}" alt="${PLATFORM_LABELS[platform] || platform}" />
           <div class="body">

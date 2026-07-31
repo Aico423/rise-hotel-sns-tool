@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>部屋タイプの設定 | RISE HOTEL SNS投稿ツール</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>部屋タイプの設定</p>
+  </header>
+  <main>
+    <nav class="tabs">
+      <a href="index.html">一覧にもどる</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+      <a href="decorations.html">スタンプを登録する</a>
+      <a href="preview.html">プレビュー</a>
+      <a href="room-types.html" class="active">部屋タイプの設定</a>
+      <a href="users.html">ユーザー管理</a>
+      <a href="#" id="logout-link">ログアウト</a>
+    </nav>
+
+    <section class="card">
+      <h2>部屋タイプの設定</h2>
+      <p class="hint-text">
+        ここで登録した「部屋タイプ名」「ベッドの説明」「最大宿泊人数」は、写真登録時の部屋タイプ選択と、
+        投稿文言の中の {ベッドサイズを挿入}・{最大宿泊人数を挿入} に自動で使われます。英語で投稿したい場合は、
+        ここをすべて英語で登録してください（例：ベッドの説明は「King 180cm×200cm」、最大宿泊人数は「Up to 10 pax」のように、
+        そのまま投稿文に入っても自然な形で入力できます）。
+      </p>
+      <div id="message" class="message hidden"></div>
+
+      <div id="room-types-list"></div>
+    </section>
+
+    <section class="card">
+      <h2>新しい部屋タイプを追加する</h2>
+      <form id="room-type-form">
+        <div class="field">
+          <label class="field-label" for="name-input">部屋タイプ名</label>
+          <input type="text" id="name-input" placeholder="例：Type A" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="bed-size-input">ベッドの説明</label>
+          <input type="text" id="bed-size-input" placeholder="例：King 180cm×200cm" />
+        </div>
+        <div class="field">
+          <label class="field-label" for="max-guests-input">最大宿泊人数の表記</label>
+          <input type="text" id="max-guests-input" placeholder="例：Up to 10 pax" />
+        </div>
+        <div class="button-row">
+          <button type="submit" id="submit-btn">追加する</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/room-types.js"></script>
+</body>
+</html>

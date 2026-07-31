@@ -70,7 +70,7 @@ function renderRoomTypeSelect(selectEl, hintEl, roomTypes, selectedName) {
       hintEl.textContent = "";
       return;
     }
-    hintEl.textContent = `ベッド: ${current.bed_size || "-"} ／ 最大宿泊人数: ${current.max_guests || "-"}名様`;
+    hintEl.textContent = `ベッド: ${current.bed_size || "-"} ／ 最大宿泊人数: ${current.max_guests || "-"}`;
   }
 
   selectEl.addEventListener("change", updateHint);

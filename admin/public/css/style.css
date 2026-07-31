@@ -438,3 +438,29 @@ button:disabled {
   gap: 6px;
   font-size: 0.8rem;
 }
+
+/* プレビュー結果：実際の投稿と同じ縦横比のまま、切り取らずに表示する */
+.preview-results {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.preview-result-item {
+  width: 320px;
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--color-surface-alt);
+}
+
+.preview-result-item img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.preview-result-item .body {
+  padding: 10px 14px;
+}

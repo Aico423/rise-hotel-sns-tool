@@ -45,6 +45,13 @@ const Api = (() => {
   return {
     getConfig: () => request(withQuery({ resource: "config" })),
 
+    listRoomTypes: () => request(withQuery({ resource: "room_types" })),
+    createRoomType: (payload) =>
+      request(withQuery({ resource: "room_types" }), { method: "POST", body: JSON.stringify(payload) }),
+    updateRoomType: (name, payload) =>
+      request(withQuery({ resource: "room_types", id: name }), { method: "PUT", body: JSON.stringify(payload) }),
+    deleteRoomType: (name) => request(withQuery({ resource: "room_types", id: name }), { method: "DELETE" }),
+
     listMaterials: () => request(withQuery({ resource: "materials" })),
     createMaterial: (payload) =>
       request(withQuery({ resource: "materials" }), { method: "POST", body: JSON.stringify(payload) }),
