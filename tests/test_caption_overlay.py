@@ -28,6 +28,17 @@ def test_wrap_text_handles_empty_string():
     assert lines == [""]
 
 
+def test_wrap_text_breaks_on_word_boundaries_not_mid_word():
+    # "Bottom" のような英単語の途中で改行されず、単語ごと次の行に送られることを確認する。
+    lines = caption_overlay.wrap_text("Top: Wide 155cm /Bottom: King 185cm", _fixed_width_measure(1.0), max_width=20.0)
+    assert lines == ["Top: Wide 155cm", "/Bottom: King 185cm"]
+
+
+def test_wrap_text_splits_overlong_single_word():
+    lines = caption_overlay.wrap_text("supercalifragilisticexpialidocious", _fixed_width_measure(1.0), max_width=10.0)
+    assert lines == ["supercalif", "ragilistic", "expialidoc", "ious"]
+
+
 @pytest.mark.skipif(not _WINDOWS_TEST_FONT.exists(), reason="Windows同梱フォントが無い環境ではスキップ")
 def test_add_caption_returns_same_size_rgb_image():
     base = Image.new("RGB", (800, 600), color=(120, 120, 120))
