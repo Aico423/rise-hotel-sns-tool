@@ -609,7 +609,10 @@ def _create_preview():
         except image_generator.ImageGenerationError as exc:
             return _error(f"画像の生成に失敗しました: {exc}", 502)
 
-    captioned = caption_overlay.add_caption(generated, rendered_text)
+    try:
+        captioned = caption_overlay.add_caption(generated, rendered_text)
+    except FileNotFoundError as exc:
+        return _error(f"文言の合成に失敗しました: {exc}", 502)
 
     creative_tags = selector.compute_creative_tags(material, text)
     decorations_data = github_client.get_json(DECORATIONS_PATH, {"decorations": []})

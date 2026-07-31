@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from PIL import Image
 
-from rise_sns import caption_overlay
+from rise_sns import caption_overlay, config
 
 # CIのUbuntuランナーには無いWindows同梱フォント。ローカルWindows開発機でのみ実描画テストを行う。
 _WINDOWS_TEST_FONT = Path(r"C:\Windows\Fonts\meiryo.ttc")
@@ -32,6 +32,17 @@ def test_wrap_text_handles_empty_string():
 def test_add_caption_returns_same_size_rgb_image():
     base = Image.new("RGB", (800, 600), color=(120, 120, 120))
     result = caption_overlay.add_caption(base, "夜景が自慢のスイートルーム", font_path=_WINDOWS_TEST_FONT)
+    assert result.size == (800, 600)
+    assert result.mode == "RGB"
+
+
+def test_bundled_font_exists_and_works_with_default_path():
+    # リポジトリに同梱しているフォント（admin/assets/fonts）が実際に存在し、
+    # font_pathを明示しないデフォルト呼び出しでも動くことを確認する
+    # （Vercel管理画面・GitHub Actionsの両方でこのデフォルトパスが使われるため）。
+    assert config.CAPTION_FONT_PATH.exists()
+    base = Image.new("RGB", (800, 600), color=(90, 90, 90))
+    result = caption_overlay.add_caption(base, "客室からの眺めをお楽しみください")
     assert result.size == (800, 600)
     assert result.mode == "RGB"
 

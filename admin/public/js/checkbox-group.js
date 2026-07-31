@@ -130,9 +130,22 @@ function getCheckedValues(container) {
   return Array.from(container.querySelectorAll("input[type=checkbox]:checked")).map((el) => el.value);
 }
 
-// 「この文言を使う写真」を選ぶための、サムネイル付きチェックボックス一覧を描画する。
-function renderMaterialPicker(container, materials, selectedIds) {
+// ラジオボタン用：チェックされている1件の値を返す（無ければnull）。
+function getCheckedValue(container) {
+  const el = container.querySelector("input:checked");
+  return el ? el.value : null;
+}
+
+// 「この文言を使う写真」等を選ぶための、サムネイル付き選択肢一覧を描画する。
+// options.mode: "multi"（既定・チェックボックスで複数選択） または "single"（ラジオボタンで1件選択）
+// options.name: singleモードのとき、ラジオボタンをグループ化するためのname属性
+// options.onChange: 選択が変わるたびに呼ばれる (materialId) => void
+function renderMaterialPicker(container, materials, selectedIds, options) {
   selectedIds = selectedIds || [];
+  options = options || {};
+  const mode = options.mode || "multi";
+  const inputType = mode === "single" ? "radio" : "checkbox";
+  const inputName = options.name || `material-picker-${Math.random().toString(36).slice(2)}`;
   container.innerHTML = "";
 
   if (!materials || materials.length === 0) {
@@ -146,19 +159,29 @@ function renderMaterialPicker(container, materials, selectedIds) {
     const isChecked = selectedIds.includes(material.id);
     if (isChecked) item.classList.add("checked");
 
-    const labelText = [material.room_type, ...(material.seasons || [])].filter(Boolean).join("・");
+    const labelText = [
+      material.room_type,
+      material.room_number ? `${material.room_number}号室` : "",
+      ...(material.seasons || []),
+    ]
+      .filter(Boolean)
+      .join("・");
 
     item.innerHTML = `
       <img src="${material.image_url}" alt="客室写真" loading="lazy" />
       <div class="label-row">
-        <input type="checkbox" value="${material.id}" ${isChecked ? "checked" : ""} />
+        <input type="${inputType}" name="${inputName}" value="${material.id}" ${isChecked ? "checked" : ""} />
         <span>${labelText || "（タグ未設定）"}</span>
       </div>
     `;
 
     const input = item.querySelector("input");
     input.addEventListener("change", () => {
+      if (mode === "single") {
+        container.querySelectorAll(".material-pick-item").forEach((el) => el.classList.remove("checked"));
+      }
       item.classList.toggle("checked", input.checked);
+      if (options.onChange) options.onChange(material.id);
     });
 
     container.appendChild(item);

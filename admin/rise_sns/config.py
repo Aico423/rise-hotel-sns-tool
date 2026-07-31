@@ -21,7 +21,10 @@ TEXTS_PATH = DATA_DIR / "texts.json"
 POST_HISTORY_PATH = DATA_DIR / "post_history.json"
 DECORATIONS_PATH = DATA_DIR / "decorations.json"
 
-FONTS_DIR = PROJECT_ROOT / "assets" / "fonts"
+# フォントは admin/assets/fonts に置いている（Vercel管理画面のRoot Directoryが
+# `admin` に設定されており、それより外側のファイルはVercelのデプロイに含まれないため。
+# GitHub Actions側は全リポジトリをcheckoutするので、この場所でも問題なく見つかる）。
+FONTS_DIR = Path(__file__).resolve().parents[1] / "assets" / "fonts"
 CAPTION_FONT_PATH = FONTS_DIR / "NotoSansJP-Bold.ttf"
 
 

@@ -1,7 +1,7 @@
 // 「プレビュー」画面の動作。
 (async function () {
   const messageEl = document.getElementById("message");
-  const materialSelect = document.getElementById("material-select");
+  const materialPicker = document.getElementById("material-picker");
   const textSelect = document.getElementById("text-select");
   const createBtn = document.getElementById("create-preview-btn");
   const resultCard = document.getElementById("result-card");
@@ -10,6 +10,7 @@
 
   let materials = [];
   let texts = [];
+  let selectedMaterialId = null;
 
   function escapeHtml(str) {
     return String(str)
@@ -29,11 +30,6 @@
     messageEl.className = "message hidden";
   }
 
-  function materialLabel(material) {
-    const parts = [material.room_type, material.room_number ? `${material.room_number}号室` : ""].filter(Boolean);
-    return escapeHtml(parts.length > 0 ? parts.join(" ") : "（部屋タイプ未設定の写真）");
-  }
-
   function textLabel(text) {
     const body = text.text.replace(/\s+/g, " ").trim();
     return escapeHtml(body.length > 24 ? `${body.slice(0, 24)}…` : body || "（文言未入力）");
@@ -45,8 +41,7 @@
   }
 
   function populateTextSelect() {
-    const materialId = materialSelect.value;
-    const eligible = texts.filter((t) => textAppliesToMaterial(t, materialId));
+    const eligible = texts.filter((t) => textAppliesToMaterial(t, selectedMaterialId));
     if (eligible.length === 0) {
       textSelect.innerHTML = '<option value="">この写真に使える文言がありません</option>';
       return;
@@ -54,15 +49,12 @@
     textSelect.innerHTML = eligible.map((t) => `<option value="${t.id}">${textLabel(t)}</option>`).join("");
   }
 
-  materialSelect.addEventListener("change", populateTextSelect);
-
   createBtn.addEventListener("click", async () => {
     hideMessage();
     resultCard.style.display = "none";
 
-    const materialId = materialSelect.value;
     const textId = textSelect.value;
-    if (!materialId || !textId) {
+    if (!selectedMaterialId || !textId) {
       showMessage("写真と文言を選んでください。", "error");
       return;
     }
@@ -71,7 +63,7 @@
     createBtn.textContent = "作成しています…（15〜30秒程度かかります）";
 
     try {
-      const result = await Api.createPreview({ material_id: materialId, text_id: textId });
+      const result = await Api.createPreview({ material_id: selectedMaterialId, text_id: textId });
       renderedTextPreview.textContent = `投稿される文言: ${result.rendered_text}`;
       previewGrid.innerHTML = "";
       Object.entries(result.images).forEach(([platform, dataUrl]) => {
@@ -112,7 +104,15 @@
       return;
     }
 
-    materialSelect.innerHTML = materials.map((m) => `<option value="${m.id}">${materialLabel(m)}</option>`).join("");
+    selectedMaterialId = materials[0].id;
+    renderMaterialPicker(materialPicker, materials, [selectedMaterialId], {
+      mode: "single",
+      name: "preview-material",
+      onChange: (materialId) => {
+        selectedMaterialId = materialId;
+        populateTextSelect();
+      },
+    });
     populateTextSelect();
   } catch (e) {
     showMessage(e.message, "error");
