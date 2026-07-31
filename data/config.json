@@ -7,8 +7,8 @@
     },
     {
       "name": "Type B",
-      "bed_size": "上段Wide-Double 155cm×200cm / 下段King 185cm×200cm",
-      "max_guests": 8
+      "bed_size": "Top：Wide-Double 155cm×200cm /Bottom：King 185cm×200cm",
+      "max_guests": "8"
     },
     {
       "name": "Type C",
