@@ -27,8 +27,8 @@
     },
     {
       "name": "ダブルベッドルーム",
-      "bed_size": "Double 140cm×200cm×2台",
-      "max_guests": 3
+      "bed_size": "Double 140cm×200cm×2",
+      "max_guests": "Up tp 3 pax"
     }
   ],
   "seasons": [
