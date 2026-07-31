@@ -34,6 +34,19 @@ def test_wrap_text_splits_overlong_single_word():
     assert lines == ["supercalif", "ragilistic", "expialidoc", "ious"]
 
 
+def test_wrap_text_keeps_lone_number_glued_to_following_word():
+    # "3" だけが行末に取り残され、次の行が "bedroom," から始まるような読みにくい改行を避ける。
+    text = "Queen bed x8, 3 bedroom, Up to 16 pax, Kitchen, cutlery, washing machine, dryer available."
+    lines = caption_overlay.wrap_text(text, _fixed_width_measure(1.0), max_width=24.0)
+    joined = " ".join(lines)
+    assert "3 bedroom," in joined
+    assert "16 pax," in joined
+    for line in lines:
+        assert not line.rstrip().endswith(" 3")
+        assert not line.lstrip().startswith("bedroom,")
+        assert not line.lstrip().startswith("pax,")
+
+
 def test_bundled_font_exists_and_works_with_default_path():
     # リポジトリに同梱しているフォント（admin/assets/fonts）が実際に存在し、
     # font_pathを明示しないデフォルト呼び出しでも動くことを確認する

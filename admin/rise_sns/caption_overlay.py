@@ -4,15 +4,39 @@
 折り返しを試みる。日本語のように単語間にスペースが無い文章や、1単語だけで
 max_widthを超える場合（英語の長い連続文字列を含む）は、その部分だけ
 1文字ずつ足していく貪欲法にフォールバックする（wrap_text はフォント無しでも単体テスト可能）。
+
+また、"3 bedroom" "16 pax" のように数字とその直後の単位・単語が離れて改行されると
+非常に読みにくくなるため、数字だけの単語とその次の単語は1つの塊として扱い、
+行の途中で分断されないようにする。
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Callable, Optional
 
 from PIL import Image, ImageDraw, ImageFont
 
 from . import config
+
+# "3" "16," "1,000" のように数字（と桁区切りのカンマ・ピリオド）だけで構成される単語にマッチする。
+# こういう単語は次に来る単語（単位・名詞）と分離して改行すると読みにくいため、1つの塊として扱う。
+_LONE_NUMBER_RE = re.compile(r"^[\d,.\-]+$")
+
+
+def _group_number_unit_pairs(words: list[str]) -> list[str]:
+    """"3", "bedroom," のように連続する数字単語＋次の単語を、1つの折り返し不可能な塊にまとめる。"""
+    grouped: list[str] = []
+    i = 0
+    while i < len(words):
+        word = words[i]
+        if word and _LONE_NUMBER_RE.match(word) and i + 1 < len(words) and words[i + 1]:
+            grouped.append(f"{word} {words[i + 1]}")
+            i += 2
+        else:
+            grouped.append(word)
+            i += 1
+    return grouped
 
 
 def _wrap_chars(word: str, measure: Callable[[str], float], max_width: float) -> list[str]:
@@ -39,7 +63,7 @@ def wrap_text(text: str, measure: Callable[[str], float], max_width: float) -> l
             lines.append("")
             continue
         current = ""
-        for word in paragraph.split(" "):
+        for word in _group_number_unit_pairs(paragraph.split(" ")):
             candidate = f"{current} {word}" if current else word
             if measure(candidate) <= max_width:
                 current = candidate
