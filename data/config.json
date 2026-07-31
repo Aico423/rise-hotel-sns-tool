@@ -12,8 +12,8 @@
     },
     {
       "name": "Type C",
-      "bed_size": "上段Wide-Double 155cm×200cm / 下段Wide-Double 155cm×200cm",
-      "max_guests": 8
+      "bed_size": "Top：Wide-Double 155cm×200cm / Bottom：Wide-Double 155cm×200cm",
+      "max_guests": "Up tp 8 pax"
     },
     {
       "name": "スイートルーム",
