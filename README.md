@@ -69,7 +69,7 @@ tests/                 ユニットテスト（pytest）
 | `SLACK_WEBHOOK_URL` | 失敗時の通知先（任意） |
 | `GITHUB_PAT` | **管理画面（Vercel）側のみ**で使用。このリポジトリ限定・Contents読み書き権限のみのfine-grained PAT |
 | `FLASK_SECRET_KEY` | **管理画面（Vercel）側のみ**。ログインセッションの署名鍵（ランダムな文字列） |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | **管理画面（Vercel）側のみ**。ユーザーアカウント（メールアドレス・パスワードのハッシュ値）の保存先。Vercel MarketplaceでUpstashを接続すると自動注入される |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | **管理画面（Vercel）側のみ**。ユーザーアカウント（メールアドレス・パスワードのハッシュ値）の保存先。VercelのStorageからUpstash(Redis)を接続すると自動注入される（`UPSTASH_REDIS_REST_URL`等が注入された場合も自動的に使われる） |
 
 ---
 

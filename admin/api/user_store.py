@@ -25,16 +25,19 @@ class UserStoreError(RuntimeError):
 
 
 def _rest_url() -> str:
-    url = os.environ.get("UPSTASH_REDIS_REST_URL", "")
+    # VercelのStorage画面からUpstash(Redis)を接続すると、実際には KV_REST_API_URL という
+    # 名前で環境変数が注入される（Upstash公式の UPSTASH_REDIS_REST_URL という名前ではない）。
+    # 将来的な名称変更にも耐えられるよう両方を確認する。
+    url = os.environ.get("KV_REST_API_URL") or os.environ.get("UPSTASH_REDIS_REST_URL", "")
     if not url:
-        raise UserStoreError("UPSTASH_REDIS_REST_URL が設定されていません。")
+        raise UserStoreError("KV_REST_API_URL（Upstashの接続先）が設定されていません。")
     return url.rstrip("/")
 
 
 def _headers() -> dict:
-    token = os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
+    token = os.environ.get("KV_REST_API_TOKEN") or os.environ.get("UPSTASH_REDIS_REST_TOKEN", "")
     if not token:
-        raise UserStoreError("UPSTASH_REDIS_REST_TOKEN が設定されていません。")
+        raise UserStoreError("KV_REST_API_TOKEN（Upstashの認証トークン）が設定されていません。")
     return {"Authorization": f"Bearer {token}"}
 
 
