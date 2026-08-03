@@ -115,7 +115,12 @@
     }
 
     styleSelect.innerHTML = textStyles
-      .map((s) => `<option value="${s.id}">${escapeHtml(s.name)}${s.is_default ? "（既定）" : ""}</option>`)
+      .map(
+        (s) =>
+          `<option value="${s.id}" ${s.is_default ? "selected" : ""}>${escapeHtml(s.name)}${
+            s.is_default ? "（既定）" : ""
+          }</option>`
+      )
       .join("");
 
     selectedMaterialId = materials[0].id;
