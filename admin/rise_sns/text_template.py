@@ -8,7 +8,11 @@
 """
 from __future__ import annotations
 
+import re
+
 PLACEHOLDERS = ("room_type", "room_number", "bed_size", "max_guests")
+# ストーリーズ画像では部屋番号バッジ・強調ワードとして別途表示するため、本文からは省く項目
+_STORY_BODY_OMITTED_PLACEHOLDERS = ("room_number", "max_guests")
 
 
 def room_types_by_name(config_data: dict) -> dict[str, dict]:
@@ -35,3 +39,28 @@ def render_text(text: str, material: dict, room_type_defs: dict[str, dict]) -> s
     for key in PLACEHOLDERS:
         rendered = rendered.replace("{" + key + "}", values.get(key, ""))
     return rendered
+
+
+def render_story_body_text(text: str, material: dict, room_type_defs: dict[str, dict]) -> str:
+    """ストーリーズ画像に焼き込む本文用のテキストを作る。
+
+    {room_number} と {max_guests} は、画像上ではバッジ・強調ワードとして別途表示するため、
+    ここでは空文字に置き換える（本文中に同じ内容が重複して表示されるのを避けるため）。
+    置き換えで生じる余分な空白は行ごとに整え、空になった行は取り除く。
+    """
+    room_type_name = material.get("room_type", "") or ""
+    room_type_def = room_type_defs.get(room_type_name, {})
+
+    values = {
+        "room_type": room_type_name,
+        "room_number": "",
+        "bed_size": room_type_def.get("bed_size", "") or "",
+        "max_guests": "",
+    }
+
+    rendered = text
+    for key in PLACEHOLDERS:
+        rendered = rendered.replace("{" + key + "}", values.get(key, ""))
+
+    lines = [re.sub(r"[ \t]{2,}", " ", line).strip() for line in rendered.split("\n")]
+    return "\n".join(line for line in lines if line)

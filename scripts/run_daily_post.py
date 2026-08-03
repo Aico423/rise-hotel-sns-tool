@@ -111,6 +111,9 @@ def run() -> int:
     config_data = data_store.load_config()
     room_type_defs = text_template.room_types_by_name(config_data)
     rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+    # ストーリーズ画像の本文は、部屋番号・最大宿泊人数をバッジ・強調ワードとして別途表示するため
+    # 本文からは省く（Xやgoogleの投稿本文には引き続きrendered_text（省略なし）を使う）。
+    story_body_text = text_template.render_story_body_text(text["text"], material, room_type_defs)
     room_type_def = room_type_defs.get(material.get("room_type", ""), {})
     badge_text = material.get("room_number") or None
     accent_text = room_type_def.get("max_guests") or None
@@ -152,7 +155,7 @@ def run() -> int:
             logger.warning("未知の投稿先が指定されています: %s", platform)
             continue
         rendered = platform_formats.render_for_platform(
-            generated, platform, caption_text=rendered_text,
+            generated, platform, caption_text=story_body_text,
             badge_text=badge_text, accent_text=accent_text, text_style=text_style,
         )
         if matched_decorations:

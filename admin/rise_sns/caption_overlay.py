@@ -12,12 +12,24 @@ max_widthを超える場合（英語の長い連続文字列を含む）は、�
 from __future__ import annotations
 
 import re
+import unicodedata
 from pathlib import Path
 from typing import Callable, Optional
 
 from PIL import Image, ImageDraw, ImageFont
 
 from . import config
+
+
+def _normalize_for_latin_font(text: str) -> str:
+    """全角の記号・数字・英字（「：」「／」「０-９」等）を半角に正規化する。
+
+    キャプションのフォント（Poppins）は欧文専用フォントのため、全角記号のグリフを
+    持っておらず、文字化け（豆腐）として表示されてしまう。全角ASCII相当の文字は
+    Unicode正規化(NFKC)でほぼ確実に半角へ変換できるため、描画前に必ず通す。
+    （全角の日本語（漢字・ひらがな・カタカナ）はNFKCでも変換されない＝この関数では救えない）
+    """
+    return unicodedata.normalize("NFKC", text)
 
 # "3" "16," "1,000" のように数字（と桁区切りのカンマ・ピリオド）だけで構成される単語にマッチする。
 # こういう単語は次に来る単語（単位・名詞）と分離して改行すると読みにくいため、1つの塊として扱う。
@@ -173,8 +185,9 @@ def compose_caption(
     """
     _check_fonts_bundled()
     merged_style = {**config.DEFAULT_TEXT_STYLE, **(style or {})}
-    badge_text = str(badge_text) if badge_text is not None else None
-    accent_text = str(accent_text) if accent_text is not None else None
+    body_text = _normalize_for_latin_font(body_text) if body_text else body_text
+    badge_text = _normalize_for_latin_font(str(badge_text)) if badge_text is not None else None
+    accent_text = _normalize_for_latin_font(str(accent_text)) if accent_text is not None else None
 
     width, height = canvas.size
     _, _, _, photo_bottom = photo_box

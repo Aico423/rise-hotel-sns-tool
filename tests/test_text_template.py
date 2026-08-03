@@ -47,3 +47,31 @@ def test_render_text_handles_missing_material_fields():
     material = {}
     text = "{room_type}{room_number}{bed_size}{max_guests}"
     assert text_template.render_text(text, material, lookup) == ""
+
+
+def test_render_story_body_text_omits_room_number_and_max_guests():
+    lookup = text_template.room_types_by_name(make_config())
+    material = {"room_type": "Type B", "room_number": "601"}
+    text = "{room_number} Bigger Bunk bed {bed_size} {max_guests} Kitchen, cutlery, dryer."
+
+    result = text_template.render_story_body_text(text, material, lookup)
+
+    assert "601" not in result
+    assert "8" not in result.split("Bigger")[0]  # max_guestsの値(8)が本文に残っていないこと
+    assert result == "Bigger Bunk bed 上段Wide-Double 155cm×200cm / 下段King 185cm×200cm Kitchen, cutlery, dryer."
+
+
+def test_render_story_body_text_keeps_room_type_and_bed_size():
+    lookup = text_template.room_types_by_name(make_config())
+    material = {"room_type": "Type A", "room_number": "502"}
+    text = "{room_type}: {bed_size}"
+    assert text_template.render_story_body_text(text, material, lookup) == (
+        "Type A: 上段Wide-Double 155cm×200cm / 下段Semi-Double 140cm×200cm"
+    )
+
+
+def test_render_story_body_text_drops_lines_left_empty_after_omitting_placeholders():
+    lookup = text_template.room_types_by_name(make_config())
+    material = {"room_type": "Type A", "room_number": "502"}
+    text = "{room_number}\nKitchen, cutlery, dryer.\n{max_guests}"
+    assert text_template.render_story_body_text(text, material, lookup) == "Kitchen, cutlery, dryer."

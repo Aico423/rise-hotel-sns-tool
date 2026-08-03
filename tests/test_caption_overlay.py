@@ -34,6 +34,22 @@ def test_wrap_text_splits_overlong_single_word():
     assert lines == ["supercalif", "ragilistic", "expialidoc", "ious"]
 
 
+def test_normalize_for_latin_font_converts_fullwidth_ascii_to_halfwidth():
+    # Poppins（欧文専用フォント）には全角記号のグリフが無く文字化けするため、
+    # "：" "／" 等の全角ASCII相当の文字は半角に正規化する。
+    result = caption_overlay._normalize_for_latin_font("Top：Wide-Double 155cm×200cm／Bottom：King")
+    assert result == "Top:Wide-Double 155cm×200cm/Bottom:King"
+
+
+def test_compose_caption_normalizes_fullwidth_punctuation_in_all_text_parts():
+    canvas = Image.new("RGB", (1080, 1920), color=(230, 225, 215))
+    photo_box = (0, 0, 1080, 1100)
+    result = caption_overlay.compose_caption(
+        canvas, photo_box, "Top：Wide-Double 155cm×200cm", badge_text="601", accent_text="Up to 10 pax"
+    )
+    assert result.size == (1080, 1920)
+
+
 def test_wrap_text_keeps_lone_number_glued_to_following_word():
     # "3" だけが行末に取り残され、次の行が "bedroom," から始まるような読みにくい改行を避ける。
     text = "Queen bed x8, 3 bedroom, Up to 16 pax, Kitchen, cutlery, washing machine, dryer available."
