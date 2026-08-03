@@ -69,6 +69,18 @@
       "accent_weight": "extrabold",
       "body_text_color": "#2d1e16",
       "body_weight": "medium"
+    },
+    {
+      "id": "a1c5ff25d0f5",
+      "name": "文字ブルー",
+      "is_default": false,
+      "badge_bg_color": "#c45a3c",
+      "badge_text_color": "#ffffff",
+      "badge_weight": "extrabold",
+      "accent_color": "#2d0a7f",
+      "accent_weight": "bold",
+      "body_text_color": "#0a117b",
+      "body_weight": "medium"
     }
   ]
 }
