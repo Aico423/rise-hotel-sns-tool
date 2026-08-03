@@ -61,7 +61,7 @@
     {
       "id": "default",
       "name": "デフォルト",
-      "is_default": true,
+      "is_default": false,
       "badge_bg_color": "#c45a3c",
       "badge_text_color": "#ffffff",
       "badge_weight": "extrabold",
@@ -73,7 +73,7 @@
     {
       "id": "a1c5ff25d0f5",
       "name": "文字ブルー",
-      "is_default": false,
+      "is_default": true,
       "badge_bg_color": "#c45a3c",
       "badge_text_color": "#ffffff",
       "badge_weight": "extrabold",
