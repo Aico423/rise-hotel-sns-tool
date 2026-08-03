@@ -56,5 +56,19 @@
     "bottom_left",
     "bottom_right",
     "bottom_center"
+  ],
+  "text_styles": [
+    {
+      "id": "default",
+      "name": "デフォルト",
+      "is_default": true,
+      "badge_bg_color": "#c45a3c",
+      "badge_text_color": "#ffffff",
+      "badge_weight": "extrabold",
+      "accent_color": "#c45a3c",
+      "accent_weight": "extrabold",
+      "body_text_color": "#2d1e16",
+      "body_weight": "medium"
+    }
   ]
 }
