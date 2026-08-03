@@ -101,7 +101,7 @@
       </div>
       <div class="field">
         <label class="field-label">ベッドの説明</label>
-        <input type="text" class="edit-bed-size" />
+        <textarea class="edit-bed-size" placeholder="2段ベッドなど上下がある場合は、Enterで改行して分けて入力すると見やすく表示されます。"></textarea>
       </div>
       <div class="field">
         <label class="field-label">最大宿泊人数の表記</label>
