@@ -33,6 +33,7 @@ from rise_sns import (  # noqa: E402
     notifier,
     platform_formats,
     selector,
+    text_style,
     text_template,
 )
 from rise_sns.publishers.base import BasePublisher  # noqa: E402
@@ -117,7 +118,8 @@ def run() -> int:
     room_type_def = room_type_defs.get(material.get("room_type", ""), {})
     badge_text = material.get("room_number") or None
     accent_text = room_type_def.get("max_guests") or None
-    text_style = config_data.get("text_style")
+    # 自動投稿では常に「既定」に指定されているパターンを使う
+    active_text_style = text_style.default_style(config_data)
 
     room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
 
@@ -156,7 +158,7 @@ def run() -> int:
             continue
         rendered = platform_formats.render_for_platform(
             generated, platform, caption_text=story_body_text,
-            badge_text=badge_text, accent_text=accent_text, text_style=text_style,
+            badge_text=badge_text, accent_text=accent_text, text_style=active_text_style,
         )
         if matched_decorations:
             rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)

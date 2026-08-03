@@ -40,6 +40,7 @@ import user_store
 from github_client import GithubClientError
 from user_store import UserStoreError
 from rise_sns import config as rise_sns_config
+from rise_sns import text_style as text_style_helper
 from rise_sns import decorations, image_generator, platform_formats, selector, text_template
 
 app = Flask(__name__)
@@ -80,10 +81,21 @@ DEFAULT_CONFIG = {
         "bottom_right",
         "bottom_center",
     ],
-    "text_style": dict(rise_sns_config.DEFAULT_TEXT_STYLE),
+    "text_styles": [
+        {"id": text_style_helper.DEFAULT_STYLE_ID, "name": "デフォルト", "is_default": True, **rise_sns_config.DEFAULT_TEXT_STYLE}
+    ],
 }
 
 FONT_WEIGHT_CHOICES = list(rise_sns_config.CAPTION_FONT_WEIGHTS.keys())
+TEXT_STYLE_FIELDS = (
+    "badge_bg_color",
+    "badge_text_color",
+    "badge_weight",
+    "accent_color",
+    "accent_weight",
+    "body_text_color",
+    "body_weight",
+)
 
 
 def _parse_material_ids(raw) -> list[str]:
@@ -228,37 +240,119 @@ def _delete_user(email: str, current_user: dict):
 
 def _get_config():
     config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
-    config_data.setdefault("text_style", dict(rise_sns_config.DEFAULT_TEXT_STYLE))
+    config_data["text_styles"] = text_style_helper.styles_from_config(config_data)
     config_data["font_weights"] = FONT_WEIGHT_CHOICES
     return jsonify(config_data)
 
 
+# ---------------------------------------------------------------------------
+# 文字の装飾パターン（部屋番号バッジ・強調ワード・本文の色と太さの組み合わせ）
+# ---------------------------------------------------------------------------
+
 _HEX_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
-def _update_text_style():
-    body = request.get_json(silent=True) or {}
-    color_fields = ("badge_bg_color", "badge_text_color", "accent_color", "body_text_color")
-    weight_fields = ("badge_weight", "accent_weight", "body_weight")
-
-    for field in color_fields:
+def _validate_text_style_body(body: dict):
+    for field in ("badge_bg_color", "badge_text_color", "accent_color", "body_text_color"):
         if field in body and body[field] and not _HEX_COLOR_RE.match(body[field]):
-            return _error(f"色の形式が正しくありません（例: #C45A3C）: {field}")
-    for field in weight_fields:
+            return f"色の形式が正しくありません（例: #C45A3C）: {field}"
+    for field in ("badge_weight", "accent_weight", "body_weight"):
         if field in body and body[field] not in FONT_WEIGHT_CHOICES:
-            return _error("文字の太さの指定が正しくありません。")
+            return "文字の太さの指定が正しくありません。"
+    return None
+
+
+def _list_text_styles():
+    config_data = github_client.get_json(CONFIG_PATH, DEFAULT_CONFIG)
+    return jsonify({"text_styles": text_style_helper.styles_from_config(config_data), "font_weights": FONT_WEIGHT_CHOICES})
+
+
+def _create_text_style():
+    body = request.get_json(silent=True) or {}
+    name = (body.get("name") or "").strip()
+    if not name:
+        return _error("パターンの名前を入力してください。")
+    error = _validate_text_style_body(body)
+    if error:
+        return _error(error)
+
+    style_id = uuid.uuid4().hex[:12]
+    record = {"id": style_id, "name": name, "is_default": False}
+    for field in TEXT_STYLE_FIELDS:
+        record[field] = body.get(field) or rise_sns_config.DEFAULT_TEXT_STYLE[field]
 
     def _mutate(data):
-        style = data.setdefault("text_style", dict(rise_sns_config.DEFAULT_TEXT_STYLE))
-        for field in color_fields + weight_fields:
-            if field in body and body[field]:
-                style[field] = body[field]
+        styles = text_style_helper.styles_from_config(data)
+        styles.append(record)
+        data["text_styles"] = styles
+        data.pop("text_style", None)
         return data
 
-    new_data = github_client.update_json_with_retry(
-        CONFIG_PATH, _mutate, message="update text style", default=DEFAULT_CONFIG
+    github_client.update_json_with_retry(
+        CONFIG_PATH, _mutate, message=f"add text style {style_id}", default=DEFAULT_CONFIG
     )
-    return jsonify(new_data["text_style"])
+    return jsonify(record), 201
+
+
+def _update_text_style(style_id: str):
+    body = request.get_json(silent=True) or {}
+    error = _validate_text_style_body(body)
+    if error:
+        return _error(error)
+
+    def _mutate(data):
+        styles = text_style_helper.styles_from_config(data)
+        target = next((s for s in styles if s.get("id") == style_id), None)
+        if not target:
+            raise KeyError("対象のパターンが見つかりませんでした。")
+        if "name" in body:
+            new_name = (body["name"] or "").strip()
+            if not new_name:
+                raise ValueError("パターンの名前を入力してください。")
+            target["name"] = new_name
+        for field in TEXT_STYLE_FIELDS:
+            if field in body and body[field]:
+                target[field] = body[field]
+        if body.get("set_default"):
+            for s in styles:
+                s["is_default"] = s.get("id") == style_id
+        data["text_styles"] = styles
+        data.pop("text_style", None)
+        return data
+
+    try:
+        new_data = github_client.update_json_with_retry(
+            CONFIG_PATH, _mutate, message=f"update text style {style_id}", default=DEFAULT_CONFIG
+        )
+    except KeyError as exc:
+        return _error(str(exc).strip('"'), 404)
+    except ValueError as exc:
+        return _error(str(exc))
+
+    updated = next((s for s in new_data["text_styles"] if s["id"] == style_id), None)
+    return jsonify(updated)
+
+
+def _delete_text_style(style_id: str):
+    def _mutate(data):
+        styles = text_style_helper.styles_from_config(data)
+        remaining = [s for s in styles if s.get("id") != style_id]
+        if not remaining:
+            raise ValueError("最後の1件のパターンは削除できません。")
+        removed_was_default = any(s.get("id") == style_id and s.get("is_default") for s in styles)
+        if removed_was_default:
+            remaining[0]["is_default"] = True
+        data["text_styles"] = remaining
+        data.pop("text_style", None)
+        return data
+
+    try:
+        new_data = github_client.update_json_with_retry(
+            CONFIG_PATH, _mutate, message=f"delete text style {style_id}", default=DEFAULT_CONFIG
+        )
+    except ValueError as exc:
+        return _error(str(exc))
+    return jsonify({"text_styles": new_data["text_styles"]})
 
 
 # ---------------------------------------------------------------------------
@@ -721,6 +815,7 @@ def _create_preview():
     body = request.get_json(silent=True) or {}
     material_id = body.get("material_id")
     text_id = body.get("text_id")
+    style_id = body.get("style_id")
     if not material_id or not text_id:
         return _error("写真と文言を選んでください。")
 
@@ -752,7 +847,7 @@ def _create_preview():
     room_type_def = room_type_defs.get(material.get("room_type", ""), {})
     badge_text = material.get("room_number") or None
     accent_text = room_type_def.get("max_guests") or None
-    text_style = config_data.get("text_style")
+    text_style = text_style_helper.style_by_id(config_data, style_id)
 
     if material.get("ready_made"):
         # すでに人物が入った完成写真の場合は、AIでの合成をせずそのまま使う（本番投稿と同じ挙動）。
@@ -832,8 +927,15 @@ def api_entry():
     if resource == "config" and method == "GET":
         return _get_config()
 
-    if resource == "text_style" and method == "PUT":
-        return _update_text_style()
+    if resource == "text_styles":
+        if method == "GET":
+            return _list_text_styles()
+        if method == "POST":
+            return _create_text_style()
+        if method == "PUT" and item_id:
+            return _update_text_style(item_id)
+        if method == "DELETE" and item_id:
+            return _delete_text_style(item_id)
 
     if resource == "room_types":
         if method == "GET":

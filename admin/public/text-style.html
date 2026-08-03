@@ -25,20 +25,30 @@
     </nav>
 
     <section class="card">
-      <h2>ストーリーズに焼き込む文字の見た目を設定する</h2>
+      <h2>登録済みのパターン</h2>
       <p class="hint-text">
         Instagram/Facebookのストーリーズ画像に表示される「部屋番号バッジ」「強調ワード（最大宿泊人数など）」
-        「本文」それぞれの色と太さを設定できます。ここでの設定は、次回のプレビュー・投稿から反映されます。
+        「本文」の色と太さを、複数パターンとして登録しておけます。プレビュー画面で、その都度好きなパターンを
+        選んで見え方を確認できます。「既定」に指定したパターンは、毎日の自動投稿で使われます。
         （X・Googleビジネスプロフィールの投稿には文字が焼き込まれないため、ここでの設定は影響しません。）
       </p>
       <div id="message" class="message hidden"></div>
+      <div id="text-styles-list"></div>
+    </section>
 
+    <section class="card">
+      <h2>新しいパターンを追加する</h2>
       <form id="text-style-form">
+        <div class="field">
+          <label class="field-label" for="name-input">パターンの名前（自分で分かればOKです）</label>
+          <input type="text" id="name-input" placeholder="例：オレンジ・くっきり" />
+        </div>
+
         <div class="field">
           <label class="field-label">部屋番号バッジ</label>
           <div class="style-row">
-            <label class="style-subfield">背景色 <input type="color" id="badge-bg-color" /></label>
-            <label class="style-subfield">文字色 <input type="color" id="badge-text-color" /></label>
+            <label class="style-subfield">背景色 <input type="color" id="badge-bg-color" value="#c45a3c" /></label>
+            <label class="style-subfield">文字色 <input type="color" id="badge-text-color" value="#ffffff" /></label>
             <label class="style-subfield">太さ <select id="badge-weight"></select></label>
           </div>
         </div>
@@ -46,7 +56,7 @@
         <div class="field">
           <label class="field-label">強調ワード（最大宿泊人数など）</label>
           <div class="style-row">
-            <label class="style-subfield">文字色 <input type="color" id="accent-color" /></label>
+            <label class="style-subfield">文字色 <input type="color" id="accent-color" value="#c45a3c" /></label>
             <label class="style-subfield">太さ <select id="accent-weight"></select></label>
           </div>
         </div>
@@ -54,13 +64,13 @@
         <div class="field">
           <label class="field-label">本文</label>
           <div class="style-row">
-            <label class="style-subfield">文字色 <input type="color" id="body-text-color" /></label>
+            <label class="style-subfield">文字色 <input type="color" id="body-text-color" value="#2d1e16" /></label>
             <label class="style-subfield">太さ <select id="body-weight"></select></label>
           </div>
         </div>
 
         <div class="button-row">
-          <button type="submit" id="submit-btn">保存する</button>
+          <button type="submit" id="submit-btn">追加する</button>
         </div>
       </form>
     </section>

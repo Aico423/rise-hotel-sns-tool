@@ -45,8 +45,12 @@ const Api = (() => {
   return {
     getConfig: () => request(withQuery({ resource: "config" })),
 
-    updateTextStyle: (payload) =>
-      request(withQuery({ resource: "text_style" }), { method: "PUT", body: JSON.stringify(payload) }),
+    listTextStyles: () => request(withQuery({ resource: "text_styles" })),
+    createTextStyle: (payload) =>
+      request(withQuery({ resource: "text_styles" }), { method: "POST", body: JSON.stringify(payload) }),
+    updateTextStyle: (id, payload) =>
+      request(withQuery({ resource: "text_styles", id }), { method: "PUT", body: JSON.stringify(payload) }),
+    deleteTextStyle: (id) => request(withQuery({ resource: "text_styles", id }), { method: "DELETE" }),
 
     listRoomTypes: () => request(withQuery({ resource: "room_types" })),
     createRoomType: (payload) =>

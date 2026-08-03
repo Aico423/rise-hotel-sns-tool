@@ -3,6 +3,7 @@
   const messageEl = document.getElementById("message");
   const materialPicker = document.getElementById("material-picker");
   const textSelect = document.getElementById("text-select");
+  const styleSelect = document.getElementById("style-select");
   const createBtn = document.getElementById("create-preview-btn");
   const resultCard = document.getElementById("result-card");
   const renderedTextPreview = document.getElementById("rendered-text-preview");
@@ -63,7 +64,11 @@
     createBtn.textContent = "作成しています…（15〜30秒程度かかります）";
 
     try {
-      const result = await Api.createPreview({ material_id: selectedMaterialId, text_id: textId });
+      const result = await Api.createPreview({
+        material_id: selectedMaterialId,
+        text_id: textId,
+        style_id: styleSelect.value || null,
+      });
       renderedTextPreview.textContent = `投稿される文言: ${result.rendered_text}`;
       previewGrid.innerHTML = "";
       Object.entries(result.images).forEach(([platform, dataUrl]) => {
@@ -91,9 +96,14 @@
   if (!currentUser) return;
 
   try {
-    const [materialsResult, textsResult] = await Promise.all([Api.listMaterials(), Api.listTexts()]);
+    const [materialsResult, textsResult, textStylesResult] = await Promise.all([
+      Api.listMaterials(),
+      Api.listTexts(),
+      Api.listTextStyles(),
+    ]);
     materials = materialsResult.materials;
     texts = textsResult.texts;
+    const textStyles = textStylesResult.text_styles || [];
 
     if (materials.length === 0) {
       showMessage("まだ写真が登録されていません。「写真を登録する」から追加してください。", "error");
@@ -103,6 +113,10 @@
       showMessage("まだ文言が登録されていません。「文言を登録する」から追加してください。", "error");
       return;
     }
+
+    styleSelect.innerHTML = textStyles
+      .map((s) => `<option value="${s.id}">${escapeHtml(s.name)}${s.is_default ? "（既定）" : ""}</option>`)
+      .join("");
 
     selectedMaterialId = materials[0].id;
     renderMaterialPicker(materialPicker, materials, [selectedMaterialId], {

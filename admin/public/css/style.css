@@ -493,3 +493,17 @@ button:disabled {
 .style-subfield select {
   min-width: 140px;
 }
+
+.style-swatch-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.style-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  display: inline-block;
+}
