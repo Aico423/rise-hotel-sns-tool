@@ -55,6 +55,42 @@
       "active": true,
       "created_at": "2026-07-30T11:19:06.033924+00:00",
       "updated_at": "2026-07-30T11:29:20.917142+00:00"
+    },
+    {
+      "id": "00cf54e3ecb4",
+      "text": "Now available for booking!\n\nPerfect for families, groups, and friends traveling together.\nEveryone can enjoy a comfortable night's sleep with our custom-built bunk beds.\n\nStay in the heart of Shinjuku with unbeatable access to Tokyo's top attractions!\n\n📍 Godzilla Head\n📍 Shinjuku Golden Gai\n📍 Kabukicho\n\n#Shinjuku #TokyoTrip #JapanTravel #TokyoHotel #GroupTravel #FamilyTravel #VisitJapan",
+      "category": "通常訴求",
+      "tags": [],
+      "material_ids": [
+        "963d04e32d8d",
+        "426699cc6778",
+        "fef8811eafe2",
+        "7115540760d6",
+        "4f27dc7c4a62",
+        "eb676a1bf007",
+        "2cd03d747b50",
+        "3fec3b81c8c6",
+        "453b6b67341d",
+        "63c293fdc94c",
+        "85c8122caf1b",
+        "75c0e80916de",
+        "1c8c487ca320",
+        "e9062f521170",
+        "a04e6800e314",
+        "a60dd8dd307c",
+        "59479e703252",
+        "7c99df2a96c7",
+        "9b76909e0511"
+      ],
+      "platforms": {
+        "x": true,
+        "instagram": true,
+        "facebook": true,
+        "google": true
+      },
+      "active": true,
+      "created_at": "2026-08-04T06:39:18.323287+00:00",
+      "updated_at": "2026-08-04T06:39:18.323301+00:00"
     }
   ]
 }
