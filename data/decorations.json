@@ -9,6 +9,16 @@
       "active": true,
       "created_at": "2026-08-04T07:37:20.730136+00:00",
       "updated_at": "2026-08-04T07:37:20.730157+00:00"
+    },
+    {
+      "id": "348e444647c5",
+      "image_path": "decorations/348e444647c5.png",
+      "name": "BOOK NOW",
+      "tags": [],
+      "placement": "bottom_left",
+      "active": true,
+      "created_at": "2026-08-04T07:39:46.737440+00:00",
+      "updated_at": "2026-08-04T07:39:46.737462+00:00"
     }
   ]
 }
