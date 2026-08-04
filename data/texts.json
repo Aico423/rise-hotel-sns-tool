@@ -91,6 +91,25 @@
       "active": true,
       "created_at": "2026-08-04T06:39:18.323287+00:00",
       "updated_at": "2026-08-04T07:54:17.961918+00:00"
+    },
+    {
+      "id": "40e5f041c43d",
+      "text": "This room is available\n{max_guests}\n{bed_size}",
+      "category": "通常訴求",
+      "tags": [],
+      "material_ids": [
+        "6d76d4b34b94",
+        "1c8c487ca320"
+      ],
+      "platforms": {
+        "x": true,
+        "instagram": true,
+        "facebook": true,
+        "google": true
+      },
+      "active": true,
+      "created_at": "2026-08-04T08:54:37.423385+00:00",
+      "updated_at": "2026-08-04T08:54:37.423401+00:00"
     }
   ]
 }
