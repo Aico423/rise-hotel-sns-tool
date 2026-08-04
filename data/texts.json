@@ -83,14 +83,14 @@
         "9b76909e0511"
       ],
       "platforms": {
-        "x": true,
+        "x": false,
         "instagram": true,
         "facebook": true,
         "google": true
       },
       "active": true,
       "created_at": "2026-08-04T06:39:18.323287+00:00",
-      "updated_at": "2026-08-04T06:39:18.323301+00:00"
+      "updated_at": "2026-08-04T07:54:17.961918+00:00"
     }
   ]
 }
