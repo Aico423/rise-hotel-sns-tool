@@ -49,11 +49,37 @@ def client(monkeypatch):
                 raise user_store.UserStoreError("最後の管理者アカウントは削除できません。")
         del users[email]
 
+    def fake_get_user(email):
+        user = users.get(email.strip().lower())
+        if not user:
+            return None
+        return {"email": user["email"], "role": user["role"], "password_hash": "x", "created_at": "2026-07-30T00:00:00+00:00"}
+
+    def fake_update_user(email, role=None, new_password=None):
+        email = email.strip().lower()
+        if email not in users:
+            raise user_store.UserStoreError("対象のユーザーが見つかりませんでした。")
+        if role is not None:
+            if role not in ("admin", "user"):
+                raise user_store.UserStoreError("権限の指定が正しくありません。")
+            if users[email]["role"] == "admin" and role != "admin":
+                remaining_admins = [u for u in users.values() if u["role"] == "admin" and u["email"] != email]
+                if not remaining_admins:
+                    raise user_store.UserStoreError("最後の管理者アカウントの権限は変更できません。")
+            users[email]["role"] = role
+        if new_password is not None:
+            if len(new_password) < 8:
+                raise user_store.UserStoreError("パスワードは8文字以上にしてください。")
+            users[email]["password"] = new_password
+        return {"email": email, "role": users[email]["role"], "created_at": "2026-07-30T00:00:00+00:00"}
+
     monkeypatch.setattr(index.user_store, "any_users_exist", fake_any_users_exist)
     monkeypatch.setattr(index.user_store, "create_user", fake_create_user)
     monkeypatch.setattr(index.user_store, "verify_password", fake_verify_password)
     monkeypatch.setattr(index.user_store, "list_users", fake_list_users)
     monkeypatch.setattr(index.user_store, "delete_user", fake_delete_user)
+    monkeypatch.setattr(index.user_store, "get_user", fake_get_user)
+    monkeypatch.setattr(index.user_store, "update_user", fake_update_user)
 
     return index.app.test_client()
 
@@ -141,6 +167,49 @@ def test_admin_can_delete_other_user(client):
     assert resp.status_code == 200
     emails = {u["email"] for u in resp.get_json()["users"]}
     assert emails == {"admin@example.com"}
+
+
+def test_admin_can_update_other_users_role(client):
+    client.post("/api/index?resource=bootstrap", json={"email": "admin@example.com", "password": "password123"})
+    client.post("/api/index?resource=users", json={"email": "staff@example.com", "password": "password123", "role": "user"})
+
+    resp = client.put("/api/index?resource=users&id=staff@example.com", json={"role": "admin"})
+    assert resp.status_code == 200
+    assert resp.get_json()["role"] == "admin"
+
+
+def test_admin_can_reset_another_users_password(client):
+    client.post("/api/index?resource=bootstrap", json={"email": "admin@example.com", "password": "password123"})
+    client.post("/api/index?resource=users", json={"email": "staff@example.com", "password": "old-password", "role": "user"})
+
+    resp = client.put("/api/index?resource=users&id=staff@example.com", json={"password": "new-password123"})
+    assert resp.status_code == 200
+
+    client.post("/api/index?resource=logout")
+    login_resp = client.post("/api/index?resource=login", json={"email": "staff@example.com", "password": "new-password123"})
+    assert login_resp.status_code == 200
+
+
+def test_update_user_returns_404_for_unknown_email(client):
+    client.post("/api/index?resource=bootstrap", json={"email": "admin@example.com", "password": "password123"})
+    resp = client.put("/api/index?resource=users&id=nobody@example.com", json={"role": "admin"})
+    assert resp.status_code == 404
+
+
+def test_update_user_refuses_to_demote_last_admin(client):
+    client.post("/api/index?resource=bootstrap", json={"email": "admin@example.com", "password": "password123"})
+    resp = client.put("/api/index?resource=users&id=admin@example.com", json={"role": "user"})
+    assert resp.status_code == 400
+
+
+def test_non_admin_cannot_update_users(client):
+    client.post("/api/index?resource=bootstrap", json={"email": "admin@example.com", "password": "password123"})
+    client.post("/api/index?resource=users", json={"email": "staff@example.com", "password": "password123", "role": "user"})
+    client.post("/api/index?resource=logout")
+    client.post("/api/index?resource=login", json={"email": "staff@example.com", "password": "password123"})
+
+    resp = client.put("/api/index?resource=users&id=staff@example.com", json={"role": "admin"})
+    assert resp.status_code == 403
 
 
 def test_config_accessible_once_logged_in(client, monkeypatch):

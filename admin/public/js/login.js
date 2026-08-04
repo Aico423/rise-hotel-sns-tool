@@ -11,6 +11,8 @@
   let isSetupMode = false;
   let confirmPasswordInput = null;
 
+  wirePasswordToggle(passwordInput);
+
   function showMessage(text, type) {
     messageEl.textContent = text;
     messageEl.className = `message ${type}`;
@@ -41,6 +43,7 @@
     passwordInput.closest(".field").after(confirmField);
     confirmPasswordInput = document.getElementById("password-confirm");
     passwordInput.autocomplete = "new-password";
+    wirePasswordToggle(confirmPasswordInput);
   }
 
   form.addEventListener("submit", async (e) => {

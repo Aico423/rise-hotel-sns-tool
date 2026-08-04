@@ -48,11 +48,15 @@ class FakeRedis:
             return 1
         raise AssertionError(f"unexpected command in test: {parts}")
 
+    def pipeline(self, commands):
+        return [self.command(*cmd) for cmd in commands]
+
 
 @pytest.fixture
 def fake_redis(monkeypatch):
     fake = FakeRedis()
     monkeypatch.setattr(user_store, "_command", fake.command)
+    monkeypatch.setattr(user_store, "_pipeline", fake.pipeline)
     return fake
 
 
@@ -137,3 +141,68 @@ def test_delete_user_allows_removing_admin_when_another_admin_remains(fake_redis
 def test_delete_user_raises_for_unknown_email(fake_redis):
     with pytest.raises(user_store.UserStoreError):
         user_store.delete_user("nobody@example.com")
+
+
+def test_update_user_changes_role(fake_redis):
+    user_store.create_user("admin1@example.com", "password123", "admin")
+    user_store.create_user("staff@example.com", "password123", "user")
+    updated = user_store.update_user("staff@example.com", role="admin")
+    assert updated["role"] == "admin"
+    assert user_store.get_user("staff@example.com")["role"] == "admin"
+
+
+def test_update_user_changes_password(fake_redis):
+    user_store.create_user("a@example.com", "old-password", "user")
+    user_store.update_user("a@example.com", new_password="new-password123")
+    assert user_store.verify_password("a@example.com", "new-password123") is not None
+    assert user_store.verify_password("a@example.com", "old-password") is None
+
+
+def test_update_user_rejects_short_new_password(fake_redis):
+    user_store.create_user("a@example.com", "old-password", "user")
+    with pytest.raises(user_store.UserStoreError):
+        user_store.update_user("a@example.com", new_password="short")
+
+
+def test_update_user_rejects_invalid_role(fake_redis):
+    user_store.create_user("a@example.com", "password123", "user")
+    with pytest.raises(user_store.UserStoreError):
+        user_store.update_user("a@example.com", role="superadmin")
+
+
+def test_update_user_refuses_to_demote_last_admin(fake_redis):
+    user_store.create_user("only-admin@example.com", "password123", "admin")
+    with pytest.raises(user_store.UserStoreError):
+        user_store.update_user("only-admin@example.com", role="user")
+
+
+def test_update_user_allows_demoting_admin_when_another_admin_remains(fake_redis):
+    user_store.create_user("admin1@example.com", "password123", "admin")
+    user_store.create_user("admin2@example.com", "password123", "admin")
+    updated = user_store.update_user("admin1@example.com", role="user")
+    assert updated["role"] == "user"
+
+
+def test_update_user_raises_for_unknown_email(fake_redis):
+    with pytest.raises(user_store.UserStoreError):
+        user_store.update_user("nobody@example.com", role="admin")
+
+
+def test_list_users_uses_pipeline_for_multiple_users(fake_redis, monkeypatch):
+    user_store.create_user("a@example.com", "password123", "admin")
+    user_store.create_user("b@example.com", "password123", "user")
+
+    calls = []
+    original_pipeline = fake_redis.pipeline
+
+    def tracking_pipeline(commands):
+        calls.append(commands)
+        return original_pipeline(commands)
+
+    monkeypatch.setattr(user_store, "_pipeline", tracking_pipeline)
+
+    users = user_store.list_users()
+    assert len(users) == 2
+    # HGETALLは1回のパイプライン呼び出しにまとめられ、ユーザー数ぶんの個別リクエストにならないこと
+    assert len(calls) == 1
+    assert len(calls[0]) == 2

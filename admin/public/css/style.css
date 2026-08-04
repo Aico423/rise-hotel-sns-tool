@@ -121,7 +121,7 @@ section.card h2 {
   color: var(--color-text);
 }
 
-select, textarea, input[type="text"] {
+select, textarea, input[type="text"], input[type="password"] {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -132,9 +132,46 @@ select, textarea, input[type="text"] {
   color: var(--color-text);
 }
 
-select:focus, textarea:focus, input[type="text"]:focus {
+select:focus, textarea:focus, input[type="text"]:focus, input[type="password"]:focus {
   outline: none;
   border-color: var(--color-primary);
+}
+
+.password-field-wrapper {
+  position: relative;
+}
+
+.password-field-wrapper input[type="password"],
+.password-field-wrapper input[type="text"] {
+  padding-right: 44px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.password-toggle-btn:hover {
+  color: var(--color-text);
+  background: transparent;
+}
+
+.password-toggle-btn:active {
+  /* ボタン共通の :active スタイル（transform: scale）が、中央寄せ用のtranslateYを
+     上書きしてしまい位置がずれるのを防ぐ */
+  transform: translateY(-50%) scale(0.94);
 }
 
 textarea {

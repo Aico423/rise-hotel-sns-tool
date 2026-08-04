@@ -52,6 +52,20 @@ def _command(*parts):
     return data.get("result")
 
 
+def _pipeline(commands: list[list]):
+    """複数コマンドを1回のHTTPリクエストにまとめて送る（ユーザー数が多いときの読み込み遅延を防ぐため）。"""
+    if not commands:
+        return []
+    resp = requests.post(f"{_rest_url()}/pipeline", headers=_headers(), json=commands, timeout=10)
+    if resp.status_code >= 400:
+        raise UserStoreError(f"認証データの読み書きに失敗しました（{resp.status_code}）。")
+    results = resp.json()
+    for item in results:
+        if isinstance(item, dict) and item.get("error"):
+            raise UserStoreError(f"認証データの読み書きに失敗しました: {item['error']}")
+    return [item.get("result") if isinstance(item, dict) else item for item in results]
+
+
 def _user_key(email: str) -> str:
     return f"user:{email.strip().lower()}"
 
@@ -81,11 +95,25 @@ def get_user(email: str) -> Optional[dict]:
 
 def list_users() -> list[dict]:
     emails = _command("SMEMBERS", USERS_SET_KEY) or []
+    if not emails:
+        return []
+
+    # ユーザーごとに個別リクエストを送ると人数分だけ往復が発生し読み込みが遅くなるため、
+    # 1回のパイプライン呼び出しにまとめて送る。
+    results = _pipeline([["HGETALL", _user_key(email)] for email in emails])
+
     users = []
-    for email in emails:
-        user = get_user(email)
-        if user:
-            users.append({"email": user["email"], "role": user["role"], "created_at": user["created_at"]})
+    for email, flat_fields in zip(emails, results):
+        record = _fields_to_dict(flat_fields)
+        if not record:
+            continue
+        users.append(
+            {
+                "email": email.strip().lower(),
+                "role": record.get("role", "user"),
+                "created_at": record.get("created_at", ""),
+            }
+        )
     users.sort(key=lambda u: u["created_at"])
     return users
 
@@ -113,6 +141,31 @@ def create_user(email: str, password: str, role: str) -> dict:
     _command("SADD", USERS_SET_KEY, email)
 
     return {"email": email, "role": role, "created_at": created_at}
+
+
+def update_user(email: str, role: Optional[str] = None, new_password: Optional[str] = None) -> dict:
+    """権限の変更・パスワードの再設定を行う（管理画面の「編集する」から呼ばれる）。"""
+    email = email.strip().lower()
+    user = get_user(email)
+    if not user:
+        raise UserStoreError("対象のユーザーが見つかりませんでした。")
+
+    if role is not None:
+        if role not in VALID_ROLES:
+            raise UserStoreError("権限の指定が正しくありません。")
+        if user["role"] == "admin" and role != "admin":
+            remaining_admins = [u for u in list_users() if u["role"] == "admin" and u["email"] != email]
+            if not remaining_admins:
+                raise UserStoreError("最後の管理者アカウントの権限は変更できません。")
+        _command("HSET", _user_key(email), "role", role)
+
+    if new_password is not None:
+        if len(new_password) < MIN_PASSWORD_LENGTH:
+            raise UserStoreError(f"パスワードは{MIN_PASSWORD_LENGTH}文字以上にしてください。")
+        _command("HSET", _user_key(email), "password_hash", generate_password_hash(new_password))
+
+    updated = get_user(email)
+    return {"email": updated["email"], "role": updated["role"], "created_at": updated["created_at"]}
 
 
 def delete_user(email: str) -> None:

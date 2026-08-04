@@ -12,15 +12,26 @@ const Api = (() => {
   }
 
   async function request(url, options = {}) {
+    // 通信が固まって画面が「読み込み中」のまま動かなくなるのを防ぐため、必ずタイムアウトを設ける。
+    const timeoutMs = options.timeoutMs || 20000;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     let res;
     try {
       res = await fetch(url, {
         credentials: "same-origin",
         headers: { "Content-Type": "application/json", ...(options.headers || {}) },
         ...options,
+        signal: controller.signal,
       });
     } catch (e) {
+      if (e.name === "AbortError") {
+        throw new Error("通信に時間がかかりすぎたため中断しました。もう一度お試しください。");
+      }
       throw new Error("通信できませんでした。インターネット接続をご確認のうえ、もう一度お試しください。");
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     let body = null;
@@ -88,9 +99,12 @@ const Api = (() => {
 
     listUsers: () => request(withQuery({ resource: "users" })),
     createUser: (payload) => request(withQuery({ resource: "users" }), { method: "POST", body: JSON.stringify(payload) }),
+    updateUser: (email, payload) =>
+      request(withQuery({ resource: "users", id: email }), { method: "PUT", body: JSON.stringify(payload) }),
     deleteUser: (email) => request(withQuery({ resource: "users", id: email }), { method: "DELETE" }),
 
     createPreview: (payload) =>
-      request(withQuery({ resource: "preview" }), { method: "POST", body: JSON.stringify(payload) }),
+      // Gemini生成を伴うため15〜30秒程度かかることがあり、既定のタイムアウトでは短すぎる。
+      request(withQuery({ resource: "preview" }), { method: "POST", body: JSON.stringify(payload), timeoutMs: 60000 }),
   };
 })();

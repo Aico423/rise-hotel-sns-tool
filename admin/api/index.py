@@ -224,6 +224,19 @@ def _create_user():
     return jsonify(user), 201
 
 
+def _update_user(email: str):
+    body = request.get_json(silent=True) or {}
+    role = body.get("role") or None
+    new_password = body.get("password") or None
+    if not user_store.get_user(email):
+        return _error("対象のユーザーが見つかりませんでした。", 404)
+    try:
+        updated = user_store.update_user(email, role=role, new_password=new_password)
+    except UserStoreError as exc:
+        return _error(str(exc))
+    return jsonify(updated)
+
+
 def _delete_user(email: str, current_user: dict):
     if current_user["email"] == email.strip().lower():
         return _error("自分自身のアカウントは削除できません。別の管理者に依頼してください。", 400)
@@ -920,6 +933,8 @@ def api_entry():
             return _list_users()
         if method == "POST":
             return _create_user()
+        if method == "PUT" and item_id:
+            return _update_user(item_id)
         if method == "DELETE" and item_id:
             return _delete_user(item_id, current_user)
         return _error("不明なリクエストです。", 404)

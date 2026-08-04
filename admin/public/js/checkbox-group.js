@@ -1,3 +1,32 @@
+// パスワード入力欄に「表示/非表示」切り替えボタン（目のアイコン）を追加する。
+// 同じinput要素に対して二重に呼び出しても安全（既にボタンが付いていれば何もしない）。
+const _EYE_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>';
+const _EYE_OFF_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.4 10.4 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+function wirePasswordToggle(inputEl) {
+  if (!inputEl || inputEl.dataset.toggleWired) return;
+  inputEl.dataset.toggleWired = "true";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "password-field-wrapper";
+  inputEl.parentNode.insertBefore(wrapper, inputEl);
+  wrapper.appendChild(inputEl);
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.type = "button";
+  toggleBtn.className = "password-toggle-btn";
+  toggleBtn.setAttribute("aria-label", "パスワードを表示する");
+  toggleBtn.innerHTML = _EYE_ICON;
+  wrapper.appendChild(toggleBtn);
+
+  toggleBtn.addEventListener("click", () => {
+    const willShow = inputEl.type === "password";
+    inputEl.type = willShow ? "text" : "password";
+    toggleBtn.innerHTML = willShow ? _EYE_OFF_ICON : _EYE_ICON;
+    toggleBtn.setAttribute("aria-label", willShow ? "パスワードを非表示にする" : "パスワードを表示する");
+  });
+}
+
 // ログイン状態を確認し、未ログインならlogin.htmlへ、管理者専用ページで管理者でなければ
 // index.htmlへ移動する。管理者のときだけ「ユーザー管理」リンクを表示する。
 // 戻り値: ログイン済みユーザー情報（{email, role}）。ページ遷移が発生した場合はnullを返す。
