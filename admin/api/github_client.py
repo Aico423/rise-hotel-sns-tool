@@ -116,3 +116,31 @@ def update_json_with_retry(
 
 def public_raw_url(path: str) -> str:
     return f"https://raw.githubusercontent.com/{_repo()}/{_branch()}/{path}"
+
+
+def get_latest_scheduled_run(workflow_file: str) -> Optional[dict]:
+    """毎日の自動実行（スケジュール起動）のうち、最新の1件の状態を返す。
+
+    スタッフが手動で試しに実行したもの（workflow_dispatch）は対象外にし、
+    「今朝の自動投稿がちゃんと動いたか」だけを見せられるようにする。
+    見つからない場合はNoneを返す。
+    """
+    url = f"{API_BASE}/repos/{_repo()}/actions/workflows/{workflow_file}/runs"
+    resp = requests.get(
+        url,
+        headers=_headers(),
+        params={"event": "schedule", "per_page": 1},
+        timeout=15,
+    )
+    if resp.status_code >= 400:
+        raise GithubClientError(f"実行履歴の取得に失敗しました: {resp.status_code} {resp.text}")
+    runs = resp.json().get("workflow_runs", [])
+    if not runs:
+        return None
+    run = runs[0]
+    return {
+        "status": run.get("status"),
+        "conclusion": run.get("conclusion"),
+        "created_at": run.get("created_at"),
+        "html_url": run.get("html_url"),
+    }

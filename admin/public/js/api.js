@@ -55,6 +55,7 @@ const Api = (() => {
 
   return {
     getConfig: () => request(withQuery({ resource: "config" })),
+    getPostStatus: () => request(withQuery({ resource: "post_status" })),
 
     listTextStyles: () => request(withQuery({ resource: "text_styles" })),
     createTextStyle: (payload) =>

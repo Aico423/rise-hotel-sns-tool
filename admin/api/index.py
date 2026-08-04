@@ -60,6 +60,7 @@ MATERIALS_PATH = "data/materials.json"
 TEXTS_PATH = "data/texts.json"
 CONFIG_PATH = "data/config.json"
 DECORATIONS_PATH = "data/decorations.json"
+DAILY_POST_WORKFLOW_FILE = "daily-post.yml"
 
 DEFAULT_CONFIG = {
     "room_types": [
@@ -245,6 +246,36 @@ def _delete_user(email: str, current_user: dict):
     except UserStoreError as exc:
         return _error(str(exc), 404)
     return jsonify({"users": user_store.list_users()})
+
+
+# ---------------------------------------------------------------------------
+# 自動投稿の実行状況（GitHubやVercelの画面を直接見なくても、この管理画面だけで
+# 「昨日の自動投稿が成功したか」を平易な日本語で確認できるようにする）
+# ---------------------------------------------------------------------------
+
+def _get_post_status():
+    try:
+        run = github_client.get_latest_scheduled_run(DAILY_POST_WORKFLOW_FILE)
+    except GithubClientError as exc:
+        return _error(str(exc), 502)
+
+    if run is None:
+        return jsonify({"state": "no_history"})
+
+    if run["status"] != "completed":
+        state = "running"
+    elif run["conclusion"] == "success":
+        state = "success"
+    else:
+        state = "failure"
+
+    return jsonify(
+        {
+            "state": state,
+            "created_at": run["created_at"],
+            "html_url": run["html_url"],
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -938,6 +969,9 @@ def api_entry():
         if method == "DELETE" and item_id:
             return _delete_user(item_id, current_user)
         return _error("不明なリクエストです。", 404)
+
+    if resource == "post_status" and method == "GET":
+        return _get_post_status()
 
     if resource == "config" and method == "GET":
         return _get_config()

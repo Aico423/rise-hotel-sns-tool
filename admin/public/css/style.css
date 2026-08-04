@@ -312,6 +312,42 @@ button:disabled {
   display: none;
 }
 
+.post-status {
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  line-height: 1.6;
+}
+
+.post-status a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.post-status-success {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.post-status-error {
+  background: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: rgba(255, 134, 134, 0.3);
+}
+
+.post-status-info {
+  background: var(--color-surface-alt);
+  color: var(--color-muted);
+  border-color: var(--color-border);
+}
+
+.post-status.hidden {
+  display: none;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
