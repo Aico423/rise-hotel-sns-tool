@@ -253,29 +253,29 @@ def _delete_user(email: str, current_user: dict):
 # 「昨日の自動投稿が成功したか」を平易な日本語で確認できるようにする）
 # ---------------------------------------------------------------------------
 
+def _run_state(run: dict) -> str:
+    if run["status"] != "completed":
+        return "running"
+    if run["conclusion"] == "success":
+        return "success"
+    return "failure"
+
+
 def _get_post_status():
     try:
-        run = github_client.get_latest_scheduled_run(DAILY_POST_WORKFLOW_FILE)
+        runs = github_client.list_scheduled_runs(DAILY_POST_WORKFLOW_FILE, limit=10)
     except GithubClientError as exc:
         return _error(str(exc), 502)
 
-    if run is None:
-        return jsonify({"state": "no_history"})
+    if not runs:
+        return jsonify({"state": "no_history", "history": []})
 
-    if run["status"] != "completed":
-        state = "running"
-    elif run["conclusion"] == "success":
-        state = "success"
-    else:
-        state = "failure"
+    history = [
+        {"state": _run_state(run), "created_at": run["created_at"], "html_url": run["html_url"]} for run in runs
+    ]
+    latest = history[0]
 
-    return jsonify(
-        {
-            "state": state,
-            "created_at": run["created_at"],
-            "html_url": run["html_url"],
-        }
-    )
+    return jsonify({**latest, "history": history})
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,6 @@
 // トップ画面（一覧・編集・削除）の動作。
 (async function () {
   const messageEl = document.getElementById("message");
-  const postStatusEl = document.getElementById("post-status");
   const materialsListEl = document.getElementById("materials-list");
   const textsListEl = document.getElementById("texts-list");
   const decorationsListEl = document.getElementById("decorations-list");
@@ -31,51 +30,6 @@
       .filter(([, enabled]) => enabled)
       .map(([key]) => `<span class="tag">${escapeHtml(PLATFORM_LABELS[key] || key)}</span>`)
       .join("");
-  }
-
-  // ---------------- 自動投稿の実行状況 ----------------
-
-  function formatDateTime(iso) {
-    try {
-      return new Date(iso).toLocaleString("ja-JP", {
-        month: "numeric",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch (e) {
-      return iso;
-    }
-  }
-
-  function renderPostStatus(status) {
-    if (status.state === "success") {
-      postStatusEl.className = "post-status post-status-success";
-      postStatusEl.innerHTML = `✅ 自動投稿：直近の実行は正常に完了しました（${formatDateTime(status.created_at)}）`;
-    } else if (status.state === "failure") {
-      postStatusEl.className = "post-status post-status-error";
-      postStatusEl.innerHTML =
-        `⚠️ 自動投稿でエラーが発生しています（${formatDateTime(status.created_at)}）。` +
-        `このままサポートへ、この画面のスクリーンショットか` +
-        `<a href="${status.html_url}" target="_blank" rel="noopener">こちらの詳細画面のリンク</a>をお送りください。`;
-    } else if (status.state === "running") {
-      postStatusEl.className = "post-status post-status-info";
-      postStatusEl.textContent = `⏳ 自動投稿を実行中です…（${formatDateTime(status.created_at)}）`;
-    } else {
-      postStatusEl.className = "post-status hidden";
-      return;
-    }
-    postStatusEl.classList.remove("hidden");
-  }
-
-  async function loadPostStatus() {
-    try {
-      const status = await Api.getPostStatus();
-      renderPostStatus(status);
-    } catch (e) {
-      // ここが失敗しても一覧画面自体は普段どおり使えるようにし、目立たせすぎない
-      postStatusEl.className = "post-status hidden";
-    }
   }
 
   // ---------------- 客室写真 ----------------
@@ -532,5 +486,5 @@
     return;
   }
 
-  await Promise.all([loadMaterials(), loadTexts(), loadDecorations(), loadPostStatus()]);
+  await Promise.all([loadMaterials(), loadTexts(), loadDecorations()]);
 })();

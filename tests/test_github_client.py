@@ -54,3 +54,26 @@ def test_get_latest_scheduled_run_raises_on_http_error(env, monkeypatch):
     )
     with pytest.raises(github_client.GithubClientError):
         github_client.get_latest_scheduled_run("daily-post.yml")
+
+
+def test_list_scheduled_runs_returns_runs_in_order_with_requested_limit(env, monkeypatch):
+    runs = [
+        {"status": "completed", "conclusion": "success", "created_at": "2026-08-04T22:00:00Z", "html_url": "u2"},
+        {"status": "completed", "conclusion": "failure", "created_at": "2026-08-03T22:00:00Z", "html_url": "u1"},
+    ]
+
+    def fake_get(url, headers, params, timeout):
+        assert params["event"] == "schedule"
+        assert params["per_page"] == 5
+        return _FakeResponse(200, {"workflow_runs": runs})
+
+    monkeypatch.setattr(github_client.requests, "get", fake_get)
+    result = github_client.list_scheduled_runs("daily-post.yml", limit=5)
+    assert result == runs
+
+
+def test_list_scheduled_runs_returns_empty_list_when_none(env, monkeypatch):
+    monkeypatch.setattr(
+        github_client.requests, "get", lambda *a, **k: _FakeResponse(200, {"workflow_runs": []})
+    )
+    assert github_client.list_scheduled_runs("daily-post.yml") == []

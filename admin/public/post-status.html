@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>投稿状況 | RISE HOTEL SNS投稿ツール</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>RISE HOTEL SNS投稿ツール</h1>
+    <p>投稿状況</p>
+  </header>
+  <main>
+    <nav class="tabs">
+      <a href="index.html">一覧にもどる</a>
+      <a href="materials.html">写真を登録する</a>
+      <a href="texts.html">文言を登録する</a>
+      <a href="decorations.html">スタンプを登録する</a>
+      <a href="preview.html">プレビュー</a>
+      <a href="room-types.html">部屋タイプの設定</a>
+      <a href="text-style.html">文字の装飾の設定</a>
+      <a href="post-status.html" class="active">投稿状況</a>
+      <a href="users.html">ユーザー管理</a>
+      <a href="#" id="logout-link">ログアウト</a>
+    </nav>
+
+    <section class="card">
+      <h2>毎朝の自動投稿は動いているか</h2>
+      <p class="hint-text">
+        毎朝7:00頃（日本時間）に自動で行われる投稿の実行結果を表示します。GitHubやVercelの画面を
+        直接開かなくても、ここで正常に完了しているかを確認できます。エラーが出ている場合は、
+        この画面のスクリーンショットを送っていただければサポートで詳細を確認します。
+      </p>
+      <div id="message" class="message hidden"></div>
+
+      <div id="post-status" class="post-status hidden"></div>
+
+      <div class="button-row">
+        <button type="button" id="refresh-btn" class="secondary">更新する</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>直近の実行履歴</h2>
+      <div id="post-status-history" class="loading">読み込み中です…</div>
+    </section>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script src="js/checkbox-group.js"></script>
+  <script src="js/post-status.js"></script>
+</body>
+</html>

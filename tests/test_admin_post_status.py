@@ -23,41 +23,42 @@ def client():
     return fake_client
 
 
+def _run(status="completed", conclusion="success", created_at="2026-08-04T22:00:00Z", run_id=1):
+    return {
+        "status": status,
+        "conclusion": conclusion,
+        "created_at": created_at,
+        "html_url": f"https://github.com/x/y/actions/runs/{run_id}",
+    }
+
+
 def test_post_status_reports_no_history(client, monkeypatch):
-    monkeypatch.setattr(index.github_client, "get_latest_scheduled_run", lambda workflow_file: None)
+    monkeypatch.setattr(index.github_client, "list_scheduled_runs", lambda workflow_file, limit=10: [])
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 200
-    assert resp.get_json()["state"] == "no_history"
+    body = resp.get_json()
+    assert body["state"] == "no_history"
+    assert body["history"] == []
 
 
-def test_post_status_reports_success(client, monkeypatch):
-    monkeypatch.setattr(
-        index.github_client,
-        "get_latest_scheduled_run",
-        lambda workflow_file: {
-            "status": "completed",
-            "conclusion": "success",
-            "created_at": "2026-08-04T22:00:00Z",
-            "html_url": "https://github.com/x/y/actions/runs/1",
-        },
-    )
+def test_post_status_reports_success_and_includes_history(client, monkeypatch):
+    runs = [
+        _run(conclusion="success", created_at="2026-08-04T22:00:00Z", run_id=2),
+        _run(conclusion="failure", created_at="2026-08-03T22:00:00Z", run_id=1),
+    ]
+    monkeypatch.setattr(index.github_client, "list_scheduled_runs", lambda workflow_file, limit=10: runs)
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["state"] == "success"
     assert body["created_at"] == "2026-08-04T22:00:00Z"
+    assert len(body["history"]) == 2
+    assert [h["state"] for h in body["history"]] == ["success", "failure"]
 
 
 def test_post_status_reports_failure(client, monkeypatch):
     monkeypatch.setattr(
-        index.github_client,
-        "get_latest_scheduled_run",
-        lambda workflow_file: {
-            "status": "completed",
-            "conclusion": "failure",
-            "created_at": "2026-08-04T22:00:00Z",
-            "html_url": "https://github.com/x/y/actions/runs/2",
-        },
+        index.github_client, "list_scheduled_runs", lambda workflow_file, limit=10: [_run(conclusion="failure")]
     )
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 200
@@ -67,13 +68,8 @@ def test_post_status_reports_failure(client, monkeypatch):
 def test_post_status_reports_running_when_not_completed(client, monkeypatch):
     monkeypatch.setattr(
         index.github_client,
-        "get_latest_scheduled_run",
-        lambda workflow_file: {
-            "status": "in_progress",
-            "conclusion": None,
-            "created_at": "2026-08-04T22:00:00Z",
-            "html_url": "https://github.com/x/y/actions/runs/3",
-        },
+        "list_scheduled_runs",
+        lambda workflow_file, limit=10: [_run(status="in_progress", conclusion=None)],
     )
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 200
@@ -81,10 +77,10 @@ def test_post_status_reports_running_when_not_completed(client, monkeypatch):
 
 
 def test_post_status_surfaces_github_client_error(client, monkeypatch):
-    def _raise(workflow_file):
+    def _raise(workflow_file, limit=10):
         raise GithubClientError("実行履歴の取得に失敗しました")
 
-    monkeypatch.setattr(index.github_client, "get_latest_scheduled_run", _raise)
+    monkeypatch.setattr(index.github_client, "list_scheduled_runs", _raise)
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 502
 
