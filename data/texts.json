@@ -26,13 +26,12 @@
     },
     {
       "id": "38f0416f7668",
-      "text": "{room_number}\nBigger Bunk bed\n{bed_size}\n{max_guests}\nKitchen, cutlery,\nwashin machine, dryer",
+      "text": "Room {room_number}\nBigger Bunk bed\n{bed_size}\n{max_guests}\nKitchen, cutlery,\nwashin machine, dryer",
       "category": "通常訴求",
       "tags": [
         "BOOK NOW"
       ],
       "material_ids": [
-        "ab953c76b45a",
         "963d04e32d8d",
         "426699cc6778",
         "fef8811eafe2",
@@ -54,7 +53,7 @@
       },
       "active": true,
       "created_at": "2026-07-30T11:19:06.033924+00:00",
-      "updated_at": "2026-07-30T11:29:20.917142+00:00"
+      "updated_at": "2026-08-04T08:58:53.283588+00:00"
     },
     {
       "id": "00cf54e3ecb4",
