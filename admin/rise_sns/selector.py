@@ -73,15 +73,26 @@ def _text_applies_to_material(text: dict, material_id: str) -> bool:
     return not material_ids or material_id in material_ids
 
 
+def _text_supports_platforms(text: dict, required_platforms: list[str]) -> bool:
+    platforms = text.get("platforms") or {}
+    return all(platforms.get(p) for p in required_platforms)
+
+
 def select_text(
     texts: list[dict],
     history: list[dict],
     today: Optional[date] = None,
     material_id: Optional[str] = None,
+    required_platforms: Optional[list[str]] = None,
 ) -> dict:
     """material_idを指定すると、その写真に紐づけられた文言（または汎用文言）だけから選ぶ。
 
     これにより「8人部屋の写真」に「2人部屋の文言」が付く、といった内容の不一致を防ぐ。
+
+    required_platformsを指定すると、それらすべての投稿先にチェックが入っている文言だけに
+    絞り込む。実際に本番投稿が有効なプラットフォーム（例: X）を指定しておくことで、
+    「本文が長すぎるのでXにはチェックを入れていない文言」が選ばれて、その日Xだけ
+    投稿されない、という事態を避けられる。
     """
     today = today or date.today()
     active = [t for t in texts if t.get("active", True)]
@@ -89,6 +100,13 @@ def select_text(
         active = [t for t in active if _text_applies_to_material(t, material_id)]
     if not active:
         raise NoEligibleTextError("この写真に使える投稿文言が登録されていません。")
+
+    if required_platforms:
+        eligible = [t for t in active if _text_supports_platforms(t, required_platforms)]
+        if not eligible:
+            names = "・".join(required_platforms)
+            raise NoEligibleTextError(f"投稿先に「{names}」を指定した文言（この写真向け）が見つかりませんでした。")
+        active = eligible
 
     recent_ids = _recent_ids(history, "text_id", today, config.POST_HISTORY_LOOKBACK_DAYS)
     fresh_pool = [t for t in active if t.get("id") not in recent_ids]
@@ -121,10 +139,13 @@ def select_daily_pair(
     texts: list[dict],
     history: list[dict],
     today: Optional[date] = None,
+    required_platforms: Optional[list[str]] = None,
 ) -> DailySelection:
     today = today or date.today()
     material = select_material(materials, history, today)
-    text = select_text(texts, history, today, material_id=material.get("id"))
+    text = select_text(
+        texts, history, today, material_id=material.get("id"), required_platforms=required_platforms
+    )
     platforms_for_text = [
         platform for platform, enabled in text.get("platforms", {}).items() if enabled
     ]

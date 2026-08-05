@@ -55,6 +55,11 @@ PUBLISHERS: dict[str, tuple[type[BasePublisher], bool]] = {
 # ローカルファイルの直接アップロードを受け付けず、公開URLが必要なプラットフォーム
 NEEDS_PUBLIC_URL = {"instagram", "facebook", "google"}
 
+# 実際に本番投稿が有効なプラットフォームは、必ずそれぞれの投稿先チェックが入っている
+# 文言だけから選ぶ（例: 本文が長すぎるためXのチェックを外した文言が選ばれてしまい、
+# その日Xだけ投稿されない、という事態を防ぐため）。
+REQUIRED_PLATFORMS = [platform for platform, (_, enabled) in PUBLISHERS.items() if enabled]
+
 PUBLISHED_DIR_NAME = "published"
 
 
@@ -95,7 +100,9 @@ def run() -> int:
     history = data_store.load_post_history()
 
     try:
-        selection = selector.select_daily_pair(materials, texts, history, today=today)
+        selection = selector.select_daily_pair(
+            materials, texts, history, today=today, required_platforms=REQUIRED_PLATFORMS
+        )
     except (selector.NoEligibleMaterialError, selector.NoEligibleTextError) as exc:
         logger.error(str(exc))
         notifier.notify_failure(f"本日の投稿をスキップしました: {exc}")

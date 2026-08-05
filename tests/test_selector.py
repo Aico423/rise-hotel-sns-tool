@@ -133,3 +133,37 @@ def test_select_daily_pair_returns_platforms_for_text():
     assert result.material["id"] == "a"
     assert result.text["id"] == "t1"
     assert result.platforms_for_text == ["x"]
+
+
+def test_select_text_required_platforms_excludes_texts_missing_the_checkbox():
+    # 本文が長すぎるためXのチェックを外した文言は、Xが必須プラットフォームのときは選ばれない
+    texts = [
+        make_text("ig-only", platforms={"x": False, "instagram": True, "facebook": True, "google": True}),
+        make_text("x-ok", platforms={"x": True, "instagram": True, "facebook": True, "google": True}),
+    ]
+    for _ in range(20):
+        chosen = selector.select_text(texts, history=[], required_platforms=["x"])
+        assert chosen["id"] == "x-ok"
+
+
+def test_select_text_required_platforms_raises_when_none_match():
+    texts = [make_text("ig-only", platforms={"x": False, "instagram": True, "facebook": True, "google": True})]
+    with pytest.raises(selector.NoEligibleTextError):
+        selector.select_text(texts, history=[], required_platforms=["x"])
+
+
+def test_select_text_without_required_platforms_ignores_the_filter():
+    texts = [make_text("ig-only", platforms={"x": False, "instagram": True, "facebook": True, "google": True})]
+    chosen = selector.select_text(texts, history=[])
+    assert chosen["id"] == "ig-only"
+
+
+def test_select_daily_pair_applies_required_platforms():
+    materials = [make_material("a", ["通年"])]
+    texts = [
+        make_text("ig-only", platforms={"x": False, "instagram": True, "facebook": True, "google": True}),
+        make_text("x-ok", platforms={"x": True, "instagram": True, "facebook": True, "google": True}),
+    ]
+    for _ in range(20):
+        result = selector.select_daily_pair(materials, texts, history=[], today=date(2026, 7, 30), required_platforms=["x"])
+        assert result.text["id"] == "x-ok"
