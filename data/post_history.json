@@ -45,6 +45,17 @@
         "facebook",
         "google"
       ]
+    },
+    {
+      "date": "2026-08-05",
+      "material_id": "7115540760d6",
+      "text_id": "00cf54e3ecb4",
+      "platforms_posted": [
+        "instagram",
+        "facebook",
+        "google"
+      ],
+      "post_ids": {}
     }
   ]
 }
