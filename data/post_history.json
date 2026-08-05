@@ -56,6 +56,20 @@
         "google"
       ],
       "post_ids": {}
+    },
+    {
+      "date": "2026-08-05",
+      "material_id": "1c8c487ca320",
+      "text_id": "40e5f041c43d",
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook",
+        "google"
+      ],
+      "post_ids": {
+        "x": "2084832705204850751"
+      }
     }
   ]
 }
