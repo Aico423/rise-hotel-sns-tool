@@ -60,7 +60,9 @@ MATERIALS_PATH = "data/materials.json"
 TEXTS_PATH = "data/texts.json"
 CONFIG_PATH = "data/config.json"
 DECORATIONS_PATH = "data/decorations.json"
+POST_HISTORY_PATH = "data/post_history.json"
 DAILY_POST_WORKFLOW_FILE = "daily-post.yml"
+X_STATUS_URL_TEMPLATE = "https://x.com/i/web/status/{post_id}"
 
 DEFAULT_CONFIG = {
     "room_types": [
@@ -261,6 +263,17 @@ def _run_state(run: dict) -> str:
     return "failure"
 
 
+def _latest_x_post_url() -> Optional[str]:
+    """直近でXに実際に投稿できた記事の直リンクを返す（「本当に投稿されたか」を
+    Aikoさん自身がワンクリックで確かめられるようにするため）。無ければNone。"""
+    history_data = github_client.get_json(POST_HISTORY_PATH, {"history": []})
+    for entry in reversed(history_data.get("history", [])):
+        post_id = (entry.get("post_ids") or {}).get("x")
+        if post_id:
+            return X_STATUS_URL_TEMPLATE.format(post_id=post_id)
+    return None
+
+
 def _get_post_status():
     try:
         runs = github_client.list_scheduled_runs(DAILY_POST_WORKFLOW_FILE, limit=10)
@@ -275,7 +288,7 @@ def _get_post_status():
     ]
     latest = history[0]
 
-    return jsonify({**latest, "history": history})
+    return jsonify({**latest, "history": history, "latest_x_post_url": _latest_x_post_url()})
 
 
 # ---------------------------------------------------------------------------

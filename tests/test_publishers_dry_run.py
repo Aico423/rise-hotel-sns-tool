@@ -102,6 +102,24 @@ def test_x_publisher_requires_image_path():
     assert result.success is False
 
 
+class FakeTweetResponseNoData:
+    data = None
+
+
+class FakeXClientNoData:
+    def create_tweet(self, text, media_ids):
+        return FakeTweetResponseNoData()
+
+
+def test_x_publisher_treats_missing_tweet_id_as_failure():
+    # tweepyが例外を投げなくても、応答に投稿ID(data.id)が含まれていない場合は
+    # 実際には投稿できていない可能性が高いため、黙って成功扱いにしてはいけない。
+    publisher = XPublisher(dry_run=False, api=FakeXApi(), client=FakeXClientNoData())
+    result = publisher.publish(caption="テスト投稿", image_path=Path("room.jpg"))
+    assert result.success is False
+    assert result.post_id is None
+
+
 # ---------- Instagram / Facebook / Google 共通のFakeSession ----------
 
 class FakeResponse:

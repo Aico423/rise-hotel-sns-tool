@@ -183,6 +183,7 @@ def run() -> int:
 
     # フェーズ3: 各SNSへ投稿を試みる
     platforms_posted: list[str] = []
+    post_ids: dict[str, str] = {}
     for platform, local_path in local_paths.items():
         publisher_cls, enabled = PUBLISHERS[platform]
 
@@ -200,6 +201,8 @@ def run() -> int:
         logger.info("%s: success=%s detail=%s", platform, result.success, result.detail)
         if result.success:
             platforms_posted.append(platform)
+            if result.post_id:
+                post_ids[platform] = result.post_id
         else:
             any_failure = True
             notifier.notify_failure(f"{platform} への投稿に失敗しました: {result.detail}")
@@ -210,6 +213,7 @@ def run() -> int:
             "material_id": material["id"],
             "text_id": text["id"],
             "platforms_posted": platforms_posted,
+            "post_ids": post_ids,
         }
     )
 

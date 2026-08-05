@@ -75,15 +75,18 @@ class XPublisher(BasePublisher):
         media = api.media_upload(filename=str(image_path))
         response = client.create_tweet(text=text, media_ids=[media.media_id])
 
-        tweet_id = None
         data = getattr(response, "data", None)
-        if data:
-            tweet_id = data.get("id")
+        tweet_id = data.get("id") if data else None
+        if not tweet_id:
+            # 例外が発生しなかった＝APIがエラーを返さなかった場合でも、投稿IDが
+            # 返ってこないのは実際には投稿できていない可能性が高いため、成功と
+            # みなさず明示的に失敗として扱う（黙って「成功」と誤報告しないため）。
+            raise RuntimeError(f"Xへの投稿の応答から投稿IDを取得できませんでした（応答: {response!r}）。")
 
         logger.info("Xへ投稿しました: tweet_id=%s", tweet_id)
         return PublishResult(
             platform=self.platform,
             success=True,
             detail="投稿しました。",
-            post_id=str(tweet_id) if tweet_id else None,
+            post_id=str(tweet_id),
         )

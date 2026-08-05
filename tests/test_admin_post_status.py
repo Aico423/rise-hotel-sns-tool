@@ -11,9 +11,12 @@ from github_client import GithubClientError  # noqa: E402
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
     index.app.secret_key = "test-secret-key"
     index.app.config.update(SESSION_COOKIE_SECURE=False, TESTING=True)
+
+    # post_history.json の読み込みは既定では空にしておく（個々のテストで上書きする）
+    monkeypatch.setattr(index.github_client, "get_json", lambda path, default: default)
 
     fake_client = index.app.test_client()
     with fake_client.session_transaction() as sess:
@@ -83,6 +86,41 @@ def test_post_status_surfaces_github_client_error(client, monkeypatch):
     monkeypatch.setattr(index.github_client, "list_scheduled_runs", _raise)
     resp = client.get("/api/index?resource=post_status")
     assert resp.status_code == 502
+
+
+def test_post_status_includes_latest_x_post_url_when_available(client, monkeypatch):
+    monkeypatch.setattr(
+        index.github_client, "list_scheduled_runs", lambda workflow_file, limit=10: [_run(conclusion="success")]
+    )
+    history_data = {
+        "history": [
+            {"date": "2026-08-03", "platforms_posted": ["x"], "post_ids": {"x": "111"}},
+            {"date": "2026-08-04", "platforms_posted": ["x"], "post_ids": {"x": "222"}},
+        ]
+    }
+    monkeypatch.setattr(
+        index.github_client,
+        "get_json",
+        lambda path, default: history_data if path == index.POST_HISTORY_PATH else default,
+    )
+    resp = client.get("/api/index?resource=post_status")
+    assert resp.status_code == 200
+    assert resp.get_json()["latest_x_post_url"] == "https://x.com/i/web/status/222"
+
+
+def test_post_status_latest_x_post_url_is_none_when_no_x_posts_recorded(client, monkeypatch):
+    monkeypatch.setattr(
+        index.github_client, "list_scheduled_runs", lambda workflow_file, limit=10: [_run(conclusion="success")]
+    )
+    history_data = {"history": [{"date": "2026-08-04", "platforms_posted": ["instagram"], "post_ids": {}}]}
+    monkeypatch.setattr(
+        index.github_client,
+        "get_json",
+        lambda path, default: history_data if path == index.POST_HISTORY_PATH else default,
+    )
+    resp = client.get("/api/index?resource=post_status")
+    assert resp.status_code == 200
+    assert resp.get_json()["latest_x_post_url"] is None
 
 
 def test_post_status_requires_login(monkeypatch):

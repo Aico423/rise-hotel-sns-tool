@@ -31,6 +31,11 @@
   const STATE_ICON = { success: "✅", failure: "⚠️", running: "⏳" };
   const STATE_LABEL = { success: "成功", failure: "失敗", running: "実行中" };
 
+  function xLinkHtml(status) {
+    if (!status.latest_x_post_url) return "";
+    return ` <a href="${status.latest_x_post_url}" target="_blank" rel="noopener">Xで実際の投稿を確認する</a>`;
+  }
+
   function renderStatus(status) {
     if (status.state === "no_history") {
       statusEl.className = "post-status post-status-info";
@@ -41,7 +46,7 @@
 
     if (status.state === "success") {
       statusEl.className = "post-status post-status-success";
-      statusEl.innerHTML = `✅ 直近の自動投稿は正常に完了しました（${formatDateTime(status.created_at)}）`;
+      statusEl.innerHTML = `✅ 直近の自動投稿は正常に完了しました（${formatDateTime(status.created_at)}）${xLinkHtml(status)}`;
     } else if (status.state === "failure") {
       statusEl.className = "post-status post-status-error";
       statusEl.innerHTML =
