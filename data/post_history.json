@@ -154,6 +154,17 @@
       "post_ids": {
         "x": "2086964279748477127"
       }
+    },
+    {
+      "date": "2026-08-12",
+      "material_id": "fef8811eafe2",
+      "text_id": "38f0416f7668",
+      "platforms_posted": [
+        "instagram",
+        "facebook",
+        "google"
+      ],
+      "post_ids": {}
     }
   ]
 }
