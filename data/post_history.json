@@ -165,6 +165,20 @@
         "google"
       ],
       "post_ids": {}
+    },
+    {
+      "date": "2026-08-12",
+      "material_id": "59479e703252",
+      "text_id": "38f0416f7668",
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "google"
+      ],
+      "post_ids": {
+        "x": "2087437181375635902",
+        "instagram": "18121355500788236"
+      }
     }
   ]
 }
