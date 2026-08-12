@@ -64,6 +64,8 @@ class FacebookPublisher(BasePublisher):
         )
         resp.raise_for_status()
         post_id = resp.json().get("post_id") or resp.json().get("id")
+        if not post_id:
+            raise RuntimeError(f"投稿IDを取得できませんでした（応答: {resp.text}）。")
         logger.info("Facebookページへ投稿しました（フィード）: post_id=%s", post_id)
         return PublishResult(platform=self.platform, success=True, detail="投稿しました（通常投稿）。", post_id=post_id)
 
@@ -93,6 +95,8 @@ class FacebookPublisher(BasePublisher):
         )
         story_resp.raise_for_status()
         story_id = story_resp.json().get("id") or story_resp.json().get("post_id")
+        if not story_id:
+            raise RuntimeError(f"投稿IDを取得できませんでした（応答: {story_resp.text}）。")
 
         logger.info("Facebookページへ投稿しました（ストーリー）: id=%s", story_id)
         return PublishResult(platform=self.platform, success=True, detail="投稿しました（ストーリー）。", post_id=story_id)

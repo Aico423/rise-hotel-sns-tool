@@ -179,6 +179,21 @@ def test_instagram_publisher_requires_image_url():
     assert result.success is False
 
 
+def test_instagram_publisher_treats_missing_media_id_as_failure(monkeypatch):
+    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "token-abc")
+    monkeypatch.setattr(config, "IG_USER_ID", "ig-1")
+
+    session = FakeSession([
+        FakeResponse({"id": "creation-1"}),
+        FakeResponse({}),  # media_publishの応答に投稿IDが無い
+    ])
+    publisher = InstagramPublisher(dry_run=False, session=session)
+    result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
+
+    assert result.success is False
+    assert result.post_id is None
+
+
 # ---------- Facebook ----------
 
 def test_facebook_publisher_feed_mode_default(monkeypatch):
@@ -193,6 +208,18 @@ def test_facebook_publisher_feed_mode_default(monkeypatch):
     assert session.calls[0]["url"].endswith("/page-1/photos")
     assert session.calls[0]["data"]["caption"] == "今日のおすすめ客室です"
     assert "published" not in session.calls[0]["data"]
+
+
+def test_facebook_publisher_feed_mode_treats_missing_post_id_as_failure(monkeypatch):
+    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "token-abc")
+    monkeypatch.setattr(config, "FACEBOOK_PAGE_ID", "page-1")
+
+    session = FakeSession([FakeResponse({})])
+    publisher = FacebookPublisher(dry_run=False, session=session, post_mode="feed")
+    result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
+
+    assert result.success is False
+    assert result.post_id is None
 
 
 def test_facebook_publisher_story_mode(monkeypatch):
@@ -212,6 +239,22 @@ def test_facebook_publisher_story_mode(monkeypatch):
     assert session.calls[0]["data"]["published"] == "false"
     assert session.calls[1]["url"].endswith("/page-1/photo_stories")
     assert session.calls[1]["data"]["photo_id"] == "photo-1"
+
+
+def test_facebook_publisher_story_mode_treats_missing_story_id_as_failure(monkeypatch):
+    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "token-abc")
+    monkeypatch.setattr(config, "FACEBOOK_PAGE_ID", "page-1")
+    monkeypatch.setattr(config, "FACEBOOK_STORY_ENDPOINT", "photo_stories")
+
+    session = FakeSession([
+        FakeResponse({"id": "photo-1"}),
+        FakeResponse({}),  # ストーリー用エンドポイントの応答に投稿IDが無い
+    ])
+    publisher = FacebookPublisher(dry_run=False, session=session, post_mode="story")
+    result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
+
+    assert result.success is False
+    assert result.post_id is None
 
 
 # ---------- Google Business ----------

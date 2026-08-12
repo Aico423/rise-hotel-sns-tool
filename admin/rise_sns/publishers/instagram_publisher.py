@@ -71,6 +71,10 @@ class InstagramPublisher(BasePublisher):
         )
         publish_resp.raise_for_status()
         media_id = publish_resp.json().get("id")
+        if not media_id:
+            # APIがエラーを返さなくても投稿IDが無ければ実際には公開できていない可能性が高いため、
+            # 黙って成功扱いにしない（Xの投稿で見つかった不具合と同じ種類の抜け穴を防ぐ）。
+            raise RuntimeError(f"投稿IDを取得できませんでした（応答: {publish_resp.text}）。")
 
         logger.info("Instagramストーリーへ投稿しました: media_id=%s", media_id)
         return PublishResult(
