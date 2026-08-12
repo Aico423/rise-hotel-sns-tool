@@ -179,6 +179,18 @@
         "x": "2087437181375635902",
         "instagram": "18121355500788236"
       }
+    },
+    {
+      "date": "2026-08-12",
+      "material_id": "4f27dc7c4a62",
+      "text_id": "48a05a909e9a",
+      "platforms_posted": [
+        "instagram",
+        "google"
+      ],
+      "post_ids": {
+        "instagram": "17957171895192315"
+      }
     }
   ]
 }
