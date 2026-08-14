@@ -191,6 +191,15 @@
       "post_ids": {
         "instagram": "17957171895192315"
       }
+    },
+    {
+      "date": "2026-08-14",
+      "material_id": "75c0e80916de",
+      "text_id": "48a05a909e9a",
+      "platforms_posted": [
+        "google"
+      ],
+      "post_ids": {}
     }
   ]
 }
