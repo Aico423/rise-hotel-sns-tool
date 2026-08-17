@@ -145,6 +145,10 @@ class FakeSession:
         self.calls.append({"url": url, "data": data, "json": json, "headers": headers})
         return self._responses.pop(0)
 
+    def get(self, url, params=None, headers=None, timeout=None):
+        self.calls.append({"url": url, "params": params, "headers": headers})
+        return self._responses.pop(0)
+
 
 # ---------- Instagram ----------
 
@@ -161,16 +165,50 @@ def test_instagram_publisher_story_flow(monkeypatch):
 
     session = FakeSession([
         FakeResponse({"id": "creation-1"}),
+        FakeResponse({"status_code": "FINISHED"}),
         FakeResponse({"id": "media-1"}),
     ])
-    publisher = InstagramPublisher(dry_run=False, session=session)
+    publisher = InstagramPublisher(dry_run=False, session=session, sleep_fn=lambda s: None)
     result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
 
     assert result.success is True
     assert result.post_id == "media-1"
     assert session.calls[0]["data"]["media_type"] == "STORIES"
     assert session.calls[0]["url"].endswith("/ig-1/media")
-    assert session.calls[1]["url"].endswith("/ig-1/media_publish")
+    assert session.calls[1]["url"].endswith("/creation-1")
+    assert session.calls[2]["url"].endswith("/ig-1/media_publish")
+
+
+def test_instagram_publisher_waits_for_container_to_finish_processing(monkeypatch):
+    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "token-abc")
+    monkeypatch.setattr(config, "IG_USER_ID", "ig-1")
+
+    session = FakeSession([
+        FakeResponse({"id": "creation-1"}),
+        FakeResponse({"status_code": "IN_PROGRESS"}),
+        FakeResponse({"status_code": "FINISHED"}),
+        FakeResponse({"id": "media-1"}),
+    ])
+    sleeps = []
+    publisher = InstagramPublisher(dry_run=False, session=session, sleep_fn=sleeps.append)
+    result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
+
+    assert result.success is True
+    assert sleeps == [2]
+
+
+def test_instagram_publisher_container_error_status_is_failure(monkeypatch):
+    monkeypatch.setattr(config, "META_ACCESS_TOKEN", "token-abc")
+    monkeypatch.setattr(config, "IG_USER_ID", "ig-1")
+
+    session = FakeSession([
+        FakeResponse({"id": "creation-1"}),
+        FakeResponse({"status_code": "ERROR"}),
+    ])
+    publisher = InstagramPublisher(dry_run=False, session=session, sleep_fn=lambda s: None)
+    result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
+
+    assert result.success is False
 
 
 def test_instagram_publisher_requires_image_url():
@@ -185,9 +223,10 @@ def test_instagram_publisher_treats_missing_media_id_as_failure(monkeypatch):
 
     session = FakeSession([
         FakeResponse({"id": "creation-1"}),
+        FakeResponse({"status_code": "FINISHED"}),
         FakeResponse({}),  # media_publishの応答に投稿IDが無い
     ])
-    publisher = InstagramPublisher(dry_run=False, session=session)
+    publisher = InstagramPublisher(dry_run=False, session=session, sleep_fn=lambda s: None)
     result = publisher.publish(caption="test", image_url="https://example.com/x.jpg")
 
     assert result.success is False
