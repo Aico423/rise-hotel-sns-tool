@@ -62,7 +62,8 @@ class FacebookPublisher(BasePublisher):
             },
             timeout=30,
         )
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            raise RuntimeError(f"投稿に失敗しました（応答: {resp.text}）。")
         post_id = resp.json().get("post_id") or resp.json().get("id")
         if not post_id:
             raise RuntimeError(f"投稿IDを取得できませんでした（応答: {resp.text}）。")
@@ -82,7 +83,8 @@ class FacebookPublisher(BasePublisher):
             },
             timeout=30,
         )
-        upload_resp.raise_for_status()
+        if upload_resp.status_code >= 400:
+            raise RuntimeError(f"写真のアップロードに失敗しました（応答: {upload_resp.text}）。")
         photo_id = upload_resp.json().get("id")
         if not photo_id:
             raise RuntimeError(f"写真のアップロードに失敗しました: {upload_resp.text}")
@@ -93,7 +95,8 @@ class FacebookPublisher(BasePublisher):
             data={"photo_id": photo_id, "access_token": config.META_ACCESS_TOKEN},
             timeout=30,
         )
-        story_resp.raise_for_status()
+        if story_resp.status_code >= 400:
+            raise RuntimeError(f"ストーリー投稿に失敗しました（応答: {story_resp.text}）。")
         story_id = story_resp.json().get("id") or story_resp.json().get("post_id")
         if not story_id:
             raise RuntimeError(f"投稿IDを取得できませんでした（応答: {story_resp.text}）。")

@@ -59,7 +59,8 @@ class InstagramPublisher(BasePublisher):
             },
             timeout=30,
         )
-        create_resp.raise_for_status()
+        if create_resp.status_code >= 400:
+            raise RuntimeError(f"画像の準備に失敗しました（応答: {create_resp.text}）。")
         creation_id = create_resp.json().get("id")
         if not creation_id:
             raise RuntimeError(f"creation_idの取得に失敗しました: {create_resp.text}")
@@ -69,7 +70,8 @@ class InstagramPublisher(BasePublisher):
             data={"creation_id": creation_id, "access_token": config.META_ACCESS_TOKEN},
             timeout=30,
         )
-        publish_resp.raise_for_status()
+        if publish_resp.status_code >= 400:
+            raise RuntimeError(f"公開に失敗しました（応答: {publish_resp.text}）。")
         media_id = publish_resp.json().get("id")
         if not media_id:
             # APIがエラーを返さなくても投稿IDが無ければ実際には公開できていない可能性が高いため、
