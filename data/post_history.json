@@ -218,6 +218,18 @@
         "google"
       ],
       "post_ids": {}
+    },
+    {
+      "date": "2026-08-17",
+      "material_id": "6d76d4b34b94",
+      "text_id": "40e5f041c43d",
+      "platforms_posted": [
+        "x",
+        "google"
+      ],
+      "post_ids": {
+        "x": "2089173427613507625"
+      }
     }
   ]
 }
