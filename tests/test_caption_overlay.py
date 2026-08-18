@@ -41,6 +41,14 @@ def test_normalize_for_latin_font_converts_fullwidth_ascii_to_halfwidth():
     assert result == "Top:Wide-Double 155cm×200cm/Bottom:King"
 
 
+def test_normalize_for_latin_font_replaces_emoji_with_hyphen():
+    # Poppins（欧文専用フォント）は絵文字のグリフを持たず豆腐（四角）として表示されるため、
+    # 安全に表示できる記号（-）へ置き換える。
+    result = caption_overlay._normalize_for_latin_font("📍Godzilla Head\n📍Kabukicho")
+    assert result == "- Godzilla Head\n- Kabukicho"
+    assert "\U0001F4CD" not in result
+
+
 def test_compose_caption_normalizes_fullwidth_punctuation_in_all_text_parts():
     canvas = Image.new("RGB", (1080, 1920), color=(230, 225, 215))
     photo_box = (0, 0, 1080, 1100)

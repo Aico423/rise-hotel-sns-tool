@@ -21,15 +21,31 @@ from PIL import Image, ImageDraw, ImageFont
 from . import config
 
 
-def _normalize_for_latin_font(text: str) -> str:
-    """全角の記号・数字・英字（「：」「／」「０-９」等）を半角に正規化する。
+# 絵文字（顔・記号・乗り物・地図記号など）としてよく使われる主要なUnicode範囲。
+# キャプションのフォント（Poppins）はこれらのグリフを持っておらず、豆腐（四角）として
+# 表示されてしまうため、描画前に安全な記号へ置き換える。
+_EMOJI_RE = re.compile(
+    "["
+    "\U0001F300-\U0001FAFF"
+    "\U00002600-\U000027BF"
+    "\U0001F1E6-\U0001F1FF"
+    "\U0000FE0F"
+    "\U0000200D"
+    "]+"
+)
 
-    キャプションのフォント（Poppins）は欧文専用フォントのため、全角記号のグリフを
+
+def _normalize_for_latin_font(text: str) -> str:
+    """全角の記号・数字・英字（「：」「／」「０-９」等）を半角に正規化し、絵文字を安全な記号に置き換える。
+
+    キャプションのフォント（Poppins）は欧文専用フォントのため、全角記号や絵文字のグリフを
     持っておらず、文字化け（豆腐）として表示されてしまう。全角ASCII相当の文字は
     Unicode正規化(NFKC)でほぼ確実に半角へ変換できるため、描画前に必ず通す。
     （全角の日本語（漢字・ひらがな・カタカナ）はNFKCでも変換されない＝この関数では救えない）
+    絵文字はNFKCでは変換されないため、別途「-」（ハイフン）へ置き換える。
     """
-    return unicodedata.normalize("NFKC", text)
+    normalized = unicodedata.normalize("NFKC", text)
+    return _EMOJI_RE.sub("- ", normalized)
 
 # "3" "16," "1,000" のように数字（と桁区切りのカンマ・ピリオド）だけで構成される単語にマッチする。
 # こういう単語は次に来る単語（単位・名詞）と分離して改行すると読みにくいため、1つの塊として扱う。
