@@ -291,6 +291,38 @@
         "instagram": "18090921389421869",
         "facebook": "1581781330286855"
       }
+    },
+    {
+      "date": "2026-08-18",
+      "posts": {
+        "x": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a"
+        },
+        "instagram": {
+          "material_id": "75c0e80916de",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18098836124575256"
+        },
+        "facebook": {
+          "material_id": "453b6b67341d",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1617606753411137"
+        },
+        "google": {
+          "material_id": "963d04e32d8d",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook",
+        "google"
+      ],
+      "post_ids": {
+        "instagram": "18098836124575256",
+        "facebook": "1617606753411137"
+      }
     }
   ]
 }
