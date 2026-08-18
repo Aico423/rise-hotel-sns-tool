@@ -42,7 +42,8 @@ def _refresh_access_token(session) -> str:
         },
         timeout=30,
     )
-    resp.raise_for_status()
+    if resp.status_code >= 400:
+        raise RuntimeError(f"アクセストークンの取得に失敗しました（応答: {resp.text}）。")
     access_token = resp.json().get("access_token")
     if not access_token:
         raise RuntimeError(f"アクセストークンの取得に失敗しました: {resp.text}")
@@ -85,8 +86,11 @@ class GoogleBusinessPublisher(BasePublisher):
             headers={"Authorization": f"Bearer {access_token}"},
             timeout=30,
         )
-        resp.raise_for_status()
+        if resp.status_code >= 400:
+            raise RuntimeError(f"投稿に失敗しました（応答: {resp.text}）。")
         post_name = resp.json().get("name")
+        if not post_name:
+            raise RuntimeError(f"投稿IDを取得できませんでした（応答: {resp.text}）。")
 
         logger.info("Google Businessへ投稿しました: name=%s", post_name)
         return PublishResult(platform=self.platform, success=True, detail="投稿しました。", post_id=post_name)
