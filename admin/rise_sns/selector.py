@@ -33,21 +33,53 @@ def current_season(today: Optional[date] = None) -> str:
     return _SEASON_BY_MONTH[today.month]
 
 
-def _recent_ids(history: list[dict], key: str, today: date, lookback_days: int) -> set[str]:
+def _entry_ids_for_platform(entry: dict, platform: str) -> tuple[Optional[str], Optional[str]]:
+    """1件の投稿履歴から、指定プラットフォームで実際に使われたmaterial_id/text_idを取り出す。
+
+    プラットフォームごとに別々の写真・文言を選べるようになって以降の新形式では
+    entry["posts"][platform] にネストされている。それより前の、1日1組を全プラットフォーム
+    共通で使っていた頃の旧形式データは、そのプラットフォームへ実際に投稿できていた場合に限り、
+    トップレベルのmaterial_id/text_idを使う。
+    """
+    posts = entry.get("posts")
+    if posts is not None:
+        platform_entry = posts.get(platform) or {}
+        return platform_entry.get("material_id"), platform_entry.get("text_id")
+    if platform in (entry.get("platforms_posted") or []):
+        return entry.get("material_id"), entry.get("text_id")
+    return None, None
+
+
+def _recent_ids(
+    history: list[dict], key: str, today: date, lookback_days: int, platform: Optional[str] = None
+) -> set[str]:
     recent: set[str] = set()
     for entry in history:
         try:
             entry_date = date.fromisoformat(entry["date"])
         except (KeyError, ValueError, TypeError):
             continue
-        if 0 <= (today - entry_date).days <= lookback_days:
+        if not (0 <= (today - entry_date).days <= lookback_days):
+            continue
+        if platform is not None:
+            material_id, text_id = _entry_ids_for_platform(entry, platform)
+            value = material_id if key == "material_id" else text_id
+        else:
             value = entry.get(key)
-            if value:
-                recent.add(value)
+        if value:
+            recent.add(value)
     return recent
 
 
-def select_material(materials: list[dict], history: list[dict], today: Optional[date] = None) -> dict:
+def select_material(
+    materials: list[dict],
+    history: list[dict],
+    today: Optional[date] = None,
+    platform: Optional[str] = None,
+) -> dict:
+    """platformを指定すると、そのプラットフォームが直近使った写真だけを避ける
+    （他のプラットフォームが同じ・別の写真を使っていたかどうかは考慮しない）。
+    """
     today = today or date.today()
     active = [m for m in materials if m.get("active", True)]
     if not active:
@@ -60,7 +92,7 @@ def select_material(materials: list[dict], history: list[dict], today: Optional[
     ]
     pool = season_matched or active
 
-    recent_ids = _recent_ids(history, "material_id", today, config.POST_HISTORY_LOOKBACK_DAYS)
+    recent_ids = _recent_ids(history, "material_id", today, config.POST_HISTORY_LOOKBACK_DAYS, platform=platform)
     fresh_pool = [m for m in pool if m.get("id") not in recent_ids]
     candidates = fresh_pool or pool
 
@@ -84,6 +116,7 @@ def select_text(
     today: Optional[date] = None,
     material_id: Optional[str] = None,
     required_platforms: Optional[list[str]] = None,
+    platform: Optional[str] = None,
 ) -> dict:
     """material_idを指定すると、その写真に紐づけられた文言（または汎用文言）だけから選ぶ。
 
@@ -93,6 +126,9 @@ def select_text(
     絞り込む。実際に本番投稿が有効なプラットフォーム（例: X）を指定しておくことで、
     「本文が長すぎるのでXにはチェックを入れていない文言」が選ばれて、その日Xだけ
     投稿されない、という事態を避けられる。
+
+    platformを指定すると、そのプラットフォームが直近使った文言だけを避ける
+    （他のプラットフォームが同じ・別の文言を使っていたかどうかは考慮しない）。
     """
     today = today or date.today()
     active = [t for t in texts if t.get("active", True)]
@@ -108,7 +144,7 @@ def select_text(
             raise NoEligibleTextError(f"投稿先に「{names}」を指定した文言（この写真向け）が見つかりませんでした。")
         active = eligible
 
-    recent_ids = _recent_ids(history, "text_id", today, config.POST_HISTORY_LOOKBACK_DAYS)
+    recent_ids = _recent_ids(history, "text_id", today, config.POST_HISTORY_LOOKBACK_DAYS, platform=platform)
     fresh_pool = [t for t in active if t.get("id") not in recent_ids]
     candidates = fresh_pool or active
 
@@ -119,7 +155,6 @@ def select_text(
 class DailySelection:
     material: dict
     text: dict
-    platforms_for_text: list[str]
 
 
 def compute_creative_tags(material: dict, text: dict) -> set[str]:
@@ -134,19 +169,23 @@ def compute_creative_tags(material: dict, text: dict) -> set[str]:
     return tags
 
 
-def select_daily_pair(
+def select_platform_pair(
     materials: list[dict],
     texts: list[dict],
     history: list[dict],
+    platform: str,
     today: Optional[date] = None,
-    required_platforms: Optional[list[str]] = None,
 ) -> DailySelection:
+    """1つのプラットフォーム向けに、写真と文言を独立して選ぶ。
+
+    プラットフォームごとに違う写真・違う文言を使ってよい（X向けの写真＋文言と、
+    Instagram/Facebook向けの写真＋文言が一致している必要はない）という運用方針に基づく。
+    そのプラットフォームの投稿先チェックが入っている文言だけを対象にする。
+    """
     today = today or date.today()
-    material = select_material(materials, history, today)
+    material = select_material(materials, history, today, platform=platform)
     text = select_text(
-        texts, history, today, material_id=material.get("id"), required_platforms=required_platforms
+        texts, history, today,
+        material_id=material.get("id"), required_platforms=[platform], platform=platform,
     )
-    platforms_for_text = [
-        platform for platform, enabled in text.get("platforms", {}).items() if enabled
-    ]
-    return DailySelection(material=material, text=text, platforms_for_text=platforms_for_text)
+    return DailySelection(material=material, text=text)

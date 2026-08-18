@@ -115,24 +115,67 @@ def test_select_text_with_material_id_raises_when_only_unrelated_linked_texts_ex
         selector.select_text(texts, history=[], material_id="room-601")
 
 
-def test_select_daily_pair_only_pairs_linked_text_with_its_material():
+def test_select_platform_pair_only_pairs_linked_text_with_its_material():
     materials = [make_material("room-801", ["通年"])]
     texts = [
         make_text("wrong-room-text", material_ids=["room-601"]),
         make_text("right-room-text", material_ids=["room-801"]),
     ]
-    result = selector.select_daily_pair(materials, texts, history=[], today=date(2026, 7, 30))
+    result = selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
     assert result.material["id"] == "room-801"
     assert result.text["id"] == "right-room-text"
 
 
-def test_select_daily_pair_returns_platforms_for_text():
+def test_select_platform_pair_only_requires_its_own_platform_checkbox():
     materials = [make_material("a", ["通年"])]
     texts = [make_text("t1", platforms={"x": True, "instagram": False, "facebook": False, "google": False})]
-    result = selector.select_daily_pair(materials, texts, history=[], today=date(2026, 7, 30))
+    result = selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
     assert result.material["id"] == "a"
     assert result.text["id"] == "t1"
-    assert result.platforms_for_text == ["x"]
+
+
+def test_select_platform_pair_raises_when_its_own_platform_checkbox_is_missing():
+    materials = [make_material("a", ["通年"])]
+    texts = [make_text("t1", platforms={"x": False, "instagram": True, "facebook": True, "google": True})]
+    with pytest.raises(selector.NoEligibleTextError):
+        selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
+
+
+def test_select_platform_pair_lets_different_platforms_pick_different_material_and_text():
+    # Xとinstagramが同じ写真・同じ文言を使う必要はない
+    materials = [
+        make_material("room-a", ["通年"]),
+        make_material("room-b", ["通年"]),
+    ]
+    texts = [
+        make_text("x-text", platforms={"x": True, "instagram": False, "facebook": False, "google": False}),
+        make_text("ig-text", platforms={"x": False, "instagram": True, "facebook": False, "google": False}),
+    ]
+    x_result = selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
+    ig_result = selector.select_platform_pair(materials, texts, history=[], platform="instagram", today=date(2026, 7, 30))
+    assert x_result.text["id"] == "x-text"
+    assert ig_result.text["id"] == "ig-text"
+
+
+def test_select_material_recency_is_scoped_per_platform():
+    # xが昨日room-aを使っていても、instagramはroom-aを避ける必要はない
+    materials = [make_material("room-a", ["通年"]), make_material("room-b", ["通年"])]
+    history = [{"date": "2026-07-29", "posts": {"x": {"material_id": "room-a", "text_id": "t"}}}]
+    chosen_for_x = selector.select_material(materials, history, today=date(2026, 7, 30), platform="x")
+    assert chosen_for_x["id"] == "room-b"
+    chosen_for_instagram = selector.select_material(materials, history, today=date(2026, 7, 30), platform="instagram")
+    assert chosen_for_instagram["id"] in {"room-a", "room-b"}
+
+
+def test_select_material_recency_understands_legacy_shared_history_entries():
+    # プラットフォームごとの選択に対応する前の履歴（1日1組を全プラットフォーム共通で使っていた形式）も
+    # 引き続き「そのプラットフォームが直近使った」ものとして扱う
+    materials = [make_material("room-a", ["通年"]), make_material("room-b", ["通年"])]
+    history = [{"date": "2026-07-29", "material_id": "room-a", "platforms_posted": ["x"]}]
+    chosen_for_x = selector.select_material(materials, history, today=date(2026, 7, 30), platform="x")
+    assert chosen_for_x["id"] == "room-b"
+    chosen_for_instagram = selector.select_material(materials, history, today=date(2026, 7, 30), platform="instagram")
+    assert chosen_for_instagram["id"] in {"room-a", "room-b"}
 
 
 def test_select_text_required_platforms_excludes_texts_missing_the_checkbox():
@@ -158,12 +201,12 @@ def test_select_text_without_required_platforms_ignores_the_filter():
     assert chosen["id"] == "ig-only"
 
 
-def test_select_daily_pair_applies_required_platforms():
+def test_select_platform_pair_applies_its_own_required_platform():
     materials = [make_material("a", ["通年"])]
     texts = [
         make_text("ig-only", platforms={"x": False, "instagram": True, "facebook": True, "google": True}),
         make_text("x-ok", platforms={"x": True, "instagram": True, "facebook": True, "google": True}),
     ]
     for _ in range(20):
-        result = selector.select_daily_pair(materials, texts, history=[], today=date(2026, 7, 30), required_platforms=["x"])
+        result = selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
         assert result.text["id"] == "x-ok"

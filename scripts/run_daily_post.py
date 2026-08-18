@@ -55,11 +55,6 @@ PUBLISHERS: dict[str, tuple[type[BasePublisher], bool]] = {
 # ローカルファイルの直接アップロードを受け付けず、公開URLが必要なプラットフォーム
 NEEDS_PUBLIC_URL = {"instagram", "facebook", "google"}
 
-# 実際に本番投稿が有効なプラットフォームは、必ずそれぞれの投稿先チェックが入っている
-# 文言だけから選ぶ（例: 本文が長すぎるためXのチェックを外した文言が選ばれてしまい、
-# その日Xだけ投稿されない、という事態を防ぐため）。
-REQUIRED_PLATFORMS = [platform for platform, (_, enabled) in PUBLISHERS.items() if enabled]
-
 PUBLISHED_DIR_NAME = "published"
 
 
@@ -98,71 +93,70 @@ def run() -> int:
     materials = data_store.load_materials()
     texts = data_store.load_texts()
     history = data_store.load_post_history()
-
-    try:
-        selection = selector.select_daily_pair(
-            materials, texts, history, today=today, required_platforms=REQUIRED_PLATFORMS
-        )
-    except (selector.NoEligibleMaterialError, selector.NoEligibleTextError) as exc:
-        logger.error(str(exc))
-        notifier.notify_failure(f"本日の投稿をスキップしました: {exc}")
-        return 1
-
-    material = selection.material
-    text = selection.text
-    logger.info("選択結果: material_id=%s text_id=%s platforms=%s", material["id"], text["id"], selection.platforms_for_text)
-
-    if not selection.platforms_for_text:
-        logger.info("選ばれた文言に投稿先が設定されていないため、本日は投稿を行いません。")
-        return 0
-
     config_data = data_store.load_config()
     room_type_defs = text_template.room_types_by_name(config_data)
-    rendered_text = text_template.render_text(text["text"], material, room_type_defs)
-    # ストーリーズ画像の本文は、部屋番号・最大宿泊人数をバッジ・強調ワードとして別途表示するため
-    # 本文からは省く（Xやgoogleの投稿本文には引き続きrendered_text（省略なし）を使う）。
-    story_body_text = text_template.render_story_body_text(text["text"], material, room_type_defs)
-    room_type_def = room_type_defs.get(material.get("room_type", ""), {})
-    badge_text = material.get("room_number") or None
-    accent_text = room_type_def.get("max_guests") or None
     # 自動投稿では常に「既定」に指定されているパターンを使う
     active_text_style = text_style.default_style(config_data)
-
-    room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
-
-    if material.get("ready_made"):
-        # すでに人物が入った完成写真として登録されている場合は、AIによる人物合成を行わずそのまま使う
-        # （毎回の生成に伴う予測不能な仕上がり・マナー違反等のリスクを避けるため）。
-        logger.info("この写真は完成写真として登録されているため、AI画像生成をスキップします。")
-        generated = room_photo
-    else:
-        try:
-            generated = image_generator.generate_composite_image(room_photo, rendered_text)
-        except image_generator.ImageGenerationError as exc:
-            logger.error(str(exc))
-            notifier.notify_failure(f"画像生成に失敗したため本日の投稿をスキップしました: {exc}")
-            return 1
-
-    creative_tags = selector.compute_creative_tags(material, text)
-    matched_decorations = decorations.select_decorations(data_store.load_decorations(), creative_tags)
-    if matched_decorations:
-        logger.info(
-            "合成するスタンプ・ハッシュタグ画像: %s",
-            [d.get("name", d["id"]) for d in matched_decorations],
-        )
-
-    def _open_stamp(decoration: dict) -> Image.Image:
-        return Image.open(data_store.resolve_image_path(decoration["image_path"]))
+    decorations_data = data_store.load_decorations()
 
     published_dir = config.DATA_DIR / PUBLISHED_DIR_NAME / today.isoformat()
     published_dir.mkdir(parents=True, exist_ok=True)
 
-    # フェーズ1: 各SNS向けにサイズ変換し、スタンプ・ハッシュタグ画像を合成してローカルに書き出す
-    local_paths: dict[str, Path] = {}
-    for platform in selection.platforms_for_text:
-        if platform not in PUBLISHERS:
-            logger.warning("未知の投稿先が指定されています: %s", platform)
+    def _open_stamp(decoration: dict) -> Image.Image:
+        return Image.open(data_store.resolve_image_path(decoration["image_path"]))
+
+    any_failure = False
+    posts_by_platform: dict[str, dict] = {}
+    # (platform, local_path, caption) — レンダリング済みで、あとは公開するだけの投稿
+    pending_publishes: list[tuple[str, Path, str]] = []
+
+    # フェーズ1: プラットフォームごとに独立して写真・文言を選び、画像を書き出す
+    # （X向けの写真＋文言と、Instagram/Facebook向けの写真＋文言が一致している必要はない）
+    for platform in PUBLISHERS:
+        try:
+            selection = selector.select_platform_pair(materials, texts, history, platform, today=today)
+        except (selector.NoEligibleMaterialError, selector.NoEligibleTextError) as exc:
+            logger.error("%s: %s", platform, exc)
+            notifier.notify_failure(f"{platform} への投稿をスキップしました: {exc}")
+            any_failure = True
             continue
+
+        material = selection.material
+        text = selection.text
+        logger.info("%s: 選択結果 material_id=%s text_id=%s", platform, material["id"], text["id"])
+
+        rendered_text = text_template.render_text(text["text"], material, room_type_defs)
+        # ストーリーズ画像の本文は、部屋番号・最大宿泊人数をバッジ・強調ワードとして別途表示するため
+        # 本文からは省く（Xやgoogleの投稿本文には引き続きrendered_text（省略なし）を使う）。
+        story_body_text = text_template.render_story_body_text(text["text"], material, room_type_defs)
+        room_type_def = room_type_defs.get(material.get("room_type", ""), {})
+        badge_text = material.get("room_number") or None
+        accent_text = room_type_def.get("max_guests") or None
+
+        room_photo = Image.open(data_store.resolve_image_path(material["image_path"]))
+
+        if material.get("ready_made"):
+            # すでに人物が入った完成写真として登録されている場合は、AIによる人物合成を行わずそのまま使う
+            # （毎回の生成に伴う予測不能な仕上がり・マナー違反等のリスクを避けるため）。
+            logger.info("%s: この写真は完成写真として登録されているため、AI画像生成をスキップします。", platform)
+            generated = room_photo
+        else:
+            try:
+                generated = image_generator.generate_composite_image(room_photo, rendered_text)
+            except image_generator.ImageGenerationError as exc:
+                logger.error(str(exc))
+                notifier.notify_failure(f"{platform}向けの画像生成に失敗しました: {exc}")
+                any_failure = True
+                continue
+
+        creative_tags = selector.compute_creative_tags(material, text)
+        matched_decorations = decorations.select_decorations(decorations_data, creative_tags)
+        if matched_decorations:
+            logger.info(
+                "%s: 合成するスタンプ・ハッシュタグ画像: %s",
+                platform, [d.get("name", d["id"]) for d in matched_decorations],
+            )
+
         rendered = platform_formats.render_for_platform(
             generated, platform, caption_text=story_body_text,
             badge_text=badge_text, accent_text=accent_text, text_style=active_text_style,
@@ -171,15 +165,16 @@ def run() -> int:
             rendered = decorations.apply_decorations(rendered, matched_decorations, open_stamp=_open_stamp)
         local_path = published_dir / f"{platform}.jpg"
         rendered.save(local_path, format="JPEG", quality=90)
-        local_paths[platform] = local_path
+
+        posts_by_platform[platform] = {"material_id": material["id"], "text_id": text["id"]}
+        pending_publishes.append((platform, local_path, rendered_text))
 
     # フェーズ2: 公開URLが必要かつ本番投稿が有効なものは、投稿を試みる前にリポジトリへpushしておく
     paths_to_push = [
-        local_paths[p]
-        for p in local_paths
-        if p in NEEDS_PUBLIC_URL and PUBLISHERS[p][1]
+        local_path
+        for platform, local_path, _ in pending_publishes
+        if platform in NEEDS_PUBLIC_URL and PUBLISHERS[platform][1]
     ]
-    any_failure = False
     if paths_to_push:
         try:
             _commit_and_push(paths_to_push, f"chore: 投稿画像を追加 ({today.isoformat()})")
@@ -191,7 +186,7 @@ def run() -> int:
     # フェーズ3: 各SNSへ投稿を試みる
     platforms_posted: list[str] = []
     post_ids: dict[str, str] = {}
-    for platform, local_path in local_paths.items():
+    for platform, local_path, caption in pending_publishes:
         publisher_cls, enabled = PUBLISHERS[platform]
 
         image_url: Optional[str] = None
@@ -200,7 +195,7 @@ def run() -> int:
 
         publisher = publisher_cls(dry_run=not enabled)
         result = publisher.publish(
-            caption=rendered_text,
+            caption=caption,
             image_path=local_path if platform not in NEEDS_PUBLIC_URL else None,
             image_url=image_url,
         )
@@ -210,6 +205,7 @@ def run() -> int:
             platforms_posted.append(platform)
             if result.post_id:
                 post_ids[platform] = result.post_id
+                posts_by_platform[platform]["post_id"] = result.post_id
         else:
             any_failure = True
             notifier.notify_failure(f"{platform} への投稿に失敗しました: {result.detail}")
@@ -217,8 +213,7 @@ def run() -> int:
     data_store.append_post_history(
         {
             "date": today.isoformat(),
-            "material_id": material["id"],
-            "text_id": text["id"],
+            "posts": posts_by_platform,
             "platforms_posted": platforms_posted,
             "post_ids": post_ids,
         }
