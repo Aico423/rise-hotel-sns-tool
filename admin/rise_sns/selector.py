@@ -169,6 +169,25 @@ def compute_creative_tags(material: dict, text: dict) -> set[str]:
     return tags
 
 
+def _materials_eligible_for_platform(materials: list[dict], texts: list[dict], platform: str) -> list[dict]:
+    """指定プラットフォームの投稿先チェックが入っている文言が実際に使える写真だけに絞り込む。
+
+    「先に写真を選び、後からその写真に使える文言を探す」という順序だと、たまたま選ばれた
+    写真に対応する文言が無いだけで、他に条件を満たす組み合わせが存在するのに投稿がまるごと
+    スキップされてしまう。これを避けるため、先に「この写真なら対応する文言がある」という
+    写真だけに候補を絞ってから選ぶ。
+    """
+    eligible_texts = [t for t in texts if t.get("active", True) and t.get("platforms", {}).get(platform)]
+    has_generic_text = any(not (t.get("material_ids") or []) for t in eligible_texts)
+    active_materials = [m for m in materials if m.get("active", True)]
+    if has_generic_text:
+        return active_materials
+    linked_ids: set[str] = set()
+    for t in eligible_texts:
+        linked_ids.update(t.get("material_ids") or [])
+    return [m for m in active_materials if m.get("id") in linked_ids]
+
+
 def select_platform_pair(
     materials: list[dict],
     texts: list[dict],
@@ -180,10 +199,15 @@ def select_platform_pair(
 
     プラットフォームごとに違う写真・違う文言を使ってよい（X向けの写真＋文言と、
     Instagram/Facebook向けの写真＋文言が一致している必要はない）という運用方針に基づく。
-    そのプラットフォームの投稿先チェックが入っている文言だけを対象にする。
+    そのプラットフォームの投稿先チェックが入っている文言が使える写真だけから選ぶため、
+    「選ばれた写真に対応する文言が無い」という理由でスキップすることはない
+    （条件を満たす組み合わせが1つも無い場合のみスキップする）。
     """
     today = today or date.today()
-    material = select_material(materials, history, today, platform=platform)
+    eligible_materials = _materials_eligible_for_platform(materials, texts, platform)
+    if not eligible_materials:
+        raise NoEligibleTextError(f"投稿先に「{platform}」を指定した、使える写真向けの文言が登録されていません。")
+    material = select_material(eligible_materials, history, today, platform=platform)
     text = select_text(
         texts, history, today,
         material_id=material.get("id"), required_platforms=[platform], platform=platform,

@@ -157,6 +157,39 @@ def test_select_platform_pair_lets_different_platforms_pick_different_material_a
     assert ig_result.text["id"] == "ig-text"
 
 
+def test_select_platform_pair_never_skips_when_some_material_lacks_eligible_text():
+    # room-bはXにチェックが入った文言に1つも紐づいていないが、room-aは紐づいている場合、
+    # room-bがたまたま選ばれて「文言が見つからない」とスキップされてはいけない。
+    # room-aを使ってでも必ず投稿できる組み合わせを選ぶべき。
+    materials = [
+        make_material("room-a", ["通年"]),
+        make_material("room-b", ["通年"]),
+    ]
+    texts = [
+        make_text(
+            "room-a-text",
+            platforms={"x": True, "instagram": True, "facebook": True, "google": True},
+            material_ids=["room-a"],
+        ),
+        make_text(
+            "room-b-text",
+            platforms={"x": False, "instagram": True, "facebook": True, "google": True},
+            material_ids=["room-b"],
+        ),
+    ]
+    for _ in range(20):
+        result = selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
+        assert result.material["id"] == "room-a"
+        assert result.text["id"] == "room-a-text"
+
+
+def test_select_platform_pair_raises_only_when_truly_no_combination_exists():
+    materials = [make_material("room-a", ["通年"])]
+    texts = [make_text("t1", platforms={"x": False, "instagram": True, "facebook": True, "google": True})]
+    with pytest.raises(selector.NoEligibleTextError):
+        selector.select_platform_pair(materials, texts, history=[], platform="x", today=date(2026, 7, 30))
+
+
 def test_select_material_recency_is_scoped_per_platform():
     # xが昨日room-aを使っていても、instagramはroom-aを避ける必要はない
     materials = [make_material("room-a", ["通年"]), make_material("room-b", ["通年"])]
