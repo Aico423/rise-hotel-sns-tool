@@ -700,6 +700,40 @@
         "facebook": "1419105300114940",
         "google": "accounts/100956897952739845821/locations/15582414019126976053/localPosts/6654852161808123006"
       }
+    },
+    {
+      "date": "2026-08-25",
+      "posts": {
+        "x": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a",
+          "post_id": "2092386728703398264"
+        },
+        "instagram": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a"
+        },
+        "facebook": {
+          "material_id": "a04e6800e314",
+          "text_id": "38f0416f7668",
+          "post_id": "4566505400283799"
+        },
+        "google": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a",
+          "post_id": "accounts/100956897952739845821/locations/15582414019126976053/localPosts/3402873414102033890"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "facebook",
+        "google"
+      ],
+      "post_ids": {
+        "x": "2092386728703398264",
+        "facebook": "4566505400283799",
+        "google": "accounts/100956897952739845821/locations/15582414019126976053/localPosts/3402873414102033890"
+      }
     }
   ]
 }
