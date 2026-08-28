@@ -734,6 +734,34 @@
         "facebook": "4566505400283799",
         "google": "accounts/100956897952739845821/locations/15582414019126976053/localPosts/3402873414102033890"
       }
+    },
+    {
+      "date": "2026-08-28",
+      "posts": {
+        "x": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "fef8811eafe2",
+          "text_id": "38f0416f7668"
+        },
+        "facebook": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1734743824621173"
+        },
+        "google": {
+          "material_id": "59479e703252",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "facebook"
+      ],
+      "post_ids": {
+        "facebook": "1734743824621173"
+      }
     }
   ]
 }
