@@ -883,6 +883,37 @@
         "x": "2094591256617697504",
         "facebook": "1068168372248503"
       }
+    },
+    {
+      "date": "2026-09-01",
+      "posts": {
+        "x": {
+          "material_id": "453b6b67341d",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "59479e703252",
+          "text_id": "38f0416f7668",
+          "post_id": "18127207906806451"
+        },
+        "facebook": {
+          "material_id": "426699cc6778",
+          "text_id": "38f0416f7668",
+          "post_id": "1428051515837459"
+        },
+        "google": {
+          "material_id": "426699cc6778",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18127207906806451",
+        "facebook": "1428051515837459"
+      }
     }
   ]
 }
