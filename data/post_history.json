@@ -1013,6 +1013,40 @@
         "instagram": "18113219423002740",
         "facebook": "1054290244057318"
       }
+    },
+    {
+      "date": "2026-09-05",
+      "posts": {
+        "x": {
+          "material_id": "eb676a1bf007",
+          "text_id": "48a05a909e9a",
+          "post_id": "2096381687064055941"
+        },
+        "instagram": {
+          "material_id": "3fec3b81c8c6",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18112536938045726"
+        },
+        "facebook": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a",
+          "post_id": "1790357111957327"
+        },
+        "google": {
+          "material_id": "6d76d4b34b94",
+          "text_id": "40e5f041c43d"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2096381687064055941",
+        "instagram": "18112536938045726",
+        "facebook": "1790357111957327"
+      }
     }
   ]
 }
