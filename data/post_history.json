@@ -1078,6 +1078,37 @@
         "instagram": "17934819654123793",
         "facebook": "1470121818280067"
       }
+    },
+    {
+      "date": "2026-09-08",
+      "posts": {
+        "x": {
+          "material_id": "963d04e32d8d",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "38f0416f7668",
+          "post_id": "18096026117434340"
+        },
+        "facebook": {
+          "material_id": "85c8122caf1b",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1049451957833229"
+        },
+        "google": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18096026117434340",
+        "facebook": "1049451957833229"
+      }
     }
   ]
 }
