@@ -1375,6 +1375,37 @@
         "instagram": "18126035395838916",
         "facebook": "1131421796496370"
       }
+    },
+    {
+      "date": "2026-09-17",
+      "posts": {
+        "x": {
+          "material_id": "2cd03d747b50",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "fef8811eafe2",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18069894368721407"
+        },
+        "facebook": {
+          "material_id": "426699cc6778",
+          "text_id": "38f0416f7668",
+          "post_id": "1343821524254952"
+        },
+        "google": {
+          "material_id": "453b6b67341d",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18069894368721407",
+        "facebook": "1343821524254952"
+      }
     }
   ]
 }
