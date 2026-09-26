@@ -1669,6 +1669,37 @@
         "instagram": "18129890329682796",
         "facebook": "1857845868722931"
       }
+    },
+    {
+      "date": "2026-09-26",
+      "posts": {
+        "x": {
+          "material_id": "fef8811eafe2",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "2cd03d747b50",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18102440513619912"
+        },
+        "facebook": {
+          "material_id": "a04e6800e314",
+          "text_id": "38f0416f7668",
+          "post_id": "1540462788123176"
+        },
+        "google": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18102440513619912",
+        "facebook": "1540462788123176"
+      }
     }
   ]
 }
