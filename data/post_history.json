@@ -1938,6 +1938,40 @@
         "instagram": "17914650675462328",
         "facebook": "28666376409645431"
       }
+    },
+    {
+      "date": "2026-10-04",
+      "posts": {
+        "x": {
+          "material_id": "2cd03d747b50",
+          "text_id": "38f0416f7668",
+          "post_id": "2106540436038824086"
+        },
+        "instagram": {
+          "material_id": "9b76909e0511",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18037680845650506"
+        },
+        "facebook": {
+          "material_id": "e9062f521170",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1133110849047853"
+        },
+        "google": {
+          "material_id": "963d04e32d8d",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2106540436038824086",
+        "instagram": "18037680845650506",
+        "facebook": "1133110849047853"
+      }
     }
   ]
 }
