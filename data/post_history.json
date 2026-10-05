@@ -1972,6 +1972,37 @@
         "instagram": "18037680845650506",
         "facebook": "1133110849047853"
       }
+    },
+    {
+      "date": "2026-10-05",
+      "posts": {
+        "x": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a"
+        },
+        "instagram": {
+          "material_id": "eb676a1bf007",
+          "text_id": "48a05a909e9a",
+          "post_id": "18118913861059286"
+        },
+        "facebook": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a",
+          "post_id": "1771529884079557"
+        },
+        "google": {
+          "material_id": "a04e6800e314",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18118913861059286",
+        "facebook": "1771529884079557"
+      }
     }
   ]
 }
