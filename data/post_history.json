@@ -2003,6 +2003,37 @@
         "instagram": "18118913861059286",
         "facebook": "1771529884079557"
       }
+    },
+    {
+      "date": "2026-10-06",
+      "posts": {
+        "x": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a"
+        },
+        "instagram": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18218702428353203"
+        },
+        "facebook": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "38f0416f7668",
+          "post_id": "1136980032089325"
+        },
+        "google": {
+          "material_id": "3fec3b81c8c6",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18218702428353203",
+        "facebook": "1136980032089325"
+      }
     }
   ]
 }
