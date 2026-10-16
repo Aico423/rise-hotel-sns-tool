@@ -2331,6 +2331,40 @@
         "instagram": "18019101263948354",
         "facebook": "1713395553546382"
       }
+    },
+    {
+      "date": "2026-10-16",
+      "posts": {
+        "x": {
+          "material_id": "1c8c487ca320",
+          "text_id": "40e5f041c43d",
+          "post_id": "2110885064615637453"
+        },
+        "instagram": {
+          "material_id": "6d76d4b34b94",
+          "text_id": "40e5f041c43d",
+          "post_id": "18199273987391633"
+        },
+        "facebook": {
+          "material_id": "6d76d4b34b94",
+          "text_id": "40e5f041c43d",
+          "post_id": "1112138704767322"
+        },
+        "google": {
+          "material_id": "1c8c487ca320",
+          "text_id": "40e5f041c43d"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2110885064615637453",
+        "instagram": "18199273987391633",
+        "facebook": "1112138704767322"
+      }
     }
   ]
 }
