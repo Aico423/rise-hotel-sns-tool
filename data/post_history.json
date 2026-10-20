@@ -2467,6 +2467,40 @@
         "instagram": "17969522924964627",
         "facebook": "1061846970183542"
       }
+    },
+    {
+      "date": "2026-10-20",
+      "posts": {
+        "x": {
+          "material_id": "a04e6800e314",
+          "text_id": "38f0416f7668",
+          "post_id": "2112346941656858766"
+        },
+        "instagram": {
+          "material_id": "3fec3b81c8c6",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "18107201333159093"
+        },
+        "facebook": {
+          "material_id": "453b6b67341d",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1663921781918425"
+        },
+        "google": {
+          "material_id": "426699cc6778",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2112346941656858766",
+        "instagram": "18107201333159093",
+        "facebook": "1663921781918425"
+      }
     }
   ]
 }
