@@ -3123,6 +3123,40 @@
         "instagram": "18099520868405990",
         "facebook": "1648024076700825"
       }
+    },
+    {
+      "date": "2026-11-09",
+      "posts": {
+        "x": {
+          "material_id": "e9062f521170",
+          "text_id": "38f0416f7668",
+          "post_id": "2119602835725676904"
+        },
+        "instagram": {
+          "material_id": "453b6b67341d",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "17992068990064454"
+        },
+        "facebook": {
+          "material_id": "1c8c487ca320",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "2197385390842255"
+        },
+        "google": {
+          "material_id": "9b76909e0511",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2119602835725676904",
+        "instagram": "17992068990064454",
+        "facebook": "2197385390842255"
+      }
     }
   ]
 }
