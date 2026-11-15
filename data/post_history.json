@@ -3324,6 +3324,40 @@
         "instagram": "18108710840206881",
         "facebook": "1707434677624143"
       }
+    },
+    {
+      "date": "2026-11-15",
+      "posts": {
+        "x": {
+          "material_id": "963d04e32d8d",
+          "text_id": "38f0416f7668",
+          "post_id": "2121778115324137531"
+        },
+        "instagram": {
+          "material_id": "75c0e80916de",
+          "text_id": "48a05a909e9a",
+          "post_id": "18112233311214212"
+        },
+        "facebook": {
+          "material_id": "7115540760d6",
+          "text_id": "48a05a909e9a",
+          "post_id": "2192045868330111"
+        },
+        "google": {
+          "material_id": "1c8c487ca320",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "x",
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "x": "2121778115324137531",
+        "instagram": "18112233311214212",
+        "facebook": "2192045868330111"
+      }
     }
   ]
 }
