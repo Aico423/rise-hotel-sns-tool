@@ -3392,6 +3392,37 @@
         "instagram": "18393445405205795",
         "facebook": "1586013026900599"
       }
+    },
+    {
+      "date": "2026-11-17",
+      "posts": {
+        "x": {
+          "material_id": "59479e703252",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a",
+          "post_id": "18462887875193879"
+        },
+        "facebook": {
+          "material_id": "963d04e32d8d",
+          "text_id": "00cf54e3ecb4",
+          "post_id": "1142808325383710"
+        },
+        "google": {
+          "material_id": "7c99df2a96c7",
+          "text_id": "38f0416f7668"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18462887875193879",
+        "facebook": "1142808325383710"
+      }
     }
   ]
 }
