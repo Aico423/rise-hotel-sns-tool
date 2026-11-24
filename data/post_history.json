@@ -3615,6 +3615,37 @@
         "instagram": "18024462209957223",
         "facebook": "3086240658392057"
       }
+    },
+    {
+      "date": "2026-11-24",
+      "posts": {
+        "x": {
+          "material_id": "e9062f521170",
+          "text_id": "38f0416f7668"
+        },
+        "instagram": {
+          "material_id": "453b6b67341d",
+          "text_id": "38f0416f7668",
+          "post_id": "18155641828552669"
+        },
+        "facebook": {
+          "material_id": "a60dd8dd307c",
+          "text_id": "48a05a909e9a",
+          "post_id": "1163403372911865"
+        },
+        "google": {
+          "material_id": "963d04e32d8d",
+          "text_id": "00cf54e3ecb4"
+        }
+      },
+      "platforms_posted": [
+        "instagram",
+        "facebook"
+      ],
+      "post_ids": {
+        "instagram": "18155641828552669",
+        "facebook": "1163403372911865"
+      }
     }
   ]
 }
